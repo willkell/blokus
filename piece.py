@@ -10,10 +10,15 @@ class Piece:
         self.image = pg.Surface((width, height))
         self.image.fill(color)
         self.color = color
-    def drag(self):
-        while pg.mouse.get_pressed()[0]:
-            self.x += pg.mouse.get_rel()[0]
-            self.y += pg.mouse.get_rel()[1]
+    def drag(self, mouse_pos):
+        self.x += mouse_pos[0]
+        self.y += mouse_pos[1]
+    def rotate(self):
+        self.image = pg.transform.rotate(self.image, 90)
+        temp = self.width
+        self.width = self.height
+        self.height = temp
+
 
     # .....
     @staticmethod
@@ -325,4 +330,11 @@ class Piece:
     def color(self, value):
         self.__color = value
         self.image.fill(value)
+    @property
+    def image(self):
+        return self.__image
+    @image.setter
+    def image(self, value):
+        self.__image = value
+
 

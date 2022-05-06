@@ -5,10 +5,10 @@ import sys
 
 class Game:
     def __init__(self):
-        self.player1 = player.Player(1)
-        self.player2 = player.Player(2)
-        self.player3 = player.Player(3)
-        self.player4 = player.Player(4)
+        self.player1 = Player(1)
+        self.player2 = Player(2)
+        self.player3 = Player(3)
+        self.player4 = Player(4)
         self.screenHeight = 0
         self.screenWidth = 0
         self.boardSize = 0
@@ -19,17 +19,20 @@ class Game:
         self.borderSize= 10
         self.tileSize = 0
         self.tileOffset = 0
+        self.board = pg.Surface((0, 0))
 
     def run(self):
         pg.init()
         screen = pg.display.set_mode((0, 0), pg.FULLSCREEN)
         self.set_up_screen(pg.display.get_surface().get_size()[0], pg.display.get_surface().get_size()[1])
-        screen.fill((255, 255, 255, 255))
-        screen.blit(self.draw_board(), (self.boardStartX, self.boardStartY))
+        self.board = self.draw_board()
         clock = pg.time.Clock()
         is_running = True
         Player.initPieces(self.player1, self.tileOffset, self.tileSize, (255, 2, 100)) 
-        Player.printPieces(self.player1, screen, self.inventoryStartX, self.inventoryStartY, self.tileOffset)
+        Player.initInventory(self.player1, self.inventoryStartX, self.inventoryStartY, self.tileOffset)
+        canDrag = False
+        dropped = False
+        currPiece = None
 
         while is_running:
             for event in pg.event.get():
@@ -38,8 +41,27 @@ class Game:
                     pg.quit()
                     sys.exit()
                 if event.type == pg.MOUSEBUTTONDOWN:
-                    Player.checkAndDrag(self.player1, event.pos)
+                    canDrag, currPiece = Player.checkForDrag(self.player1, event.pos)
+                if event.type == pg.MOUSEBUTTONUP:
+                    if canDrag:
+                        dropped = self.dropPiece(currPiece)
+                    canDrag = False
+                if event.type == pg.KEYDOWN and event.key == pg.K_RETURN:
+                    if dropped:
+                        self.commitToBoard(self.player1, currPiece)
+                        dropped = False
+                        currPiece = None
+                        Player.initInventory(self.player1, self.inventoryStartX, self.inventoryStartY, self.tileOffset)
+                if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
+                    if currPiece:
+                        Piece.rotate(currPiece)
 
+            mouse_rel = pg.mouse.get_rel()
+            if canDrag:
+                Piece.drag(currPiece, mouse_rel)
+            screen.fill((255, 255, 255, 255))
+            screen.blit(self.board, (self.boardStartX, self.boardStartY))
+            Player.printPieces(self.player1, screen)
             pg.display.flip()
             clock.tick(60)
         
@@ -61,4 +83,30 @@ class Game:
         self.inventoryStartY = self.boardStartY
         self.tileSize = (self.boardSize - (self.borderSize* 2) - 19) / 20
         self.tileOffset = (self.boardSize - (self.borderSize* 2)) / 20
+    def dropPiece(self,piece):
+        # returns false if piece is not on board
+        if piece.x < self.boardStartX or piece.x > self.boardStartX + self.boardSize or piece.y < self.boardStartY or piece.y > self.boardStartY + self.boardSize:
+            return False
+        # snaps to grid
+        tileStartX = self.boardStartX + self.borderSize
+        tileStartY = self.boardStartY + self.borderSize
+        if (piece.x - tileStartX) % self.tileOffset > self.tileOffset / 2:
+            piece.x = piece.x + self.tileOffset - (piece.x - tileStartX) % self.tileOffset
+        else:
+            piece.x = piece.x - ((piece.x - tileStartX) % self.tileOffset)
+        if (piece.y - tileStartY) % self.tileOffset > self.tileOffset / 2:
+            piece.y = piece.y + self.tileOffset - (piece.y - tileStartY) % self.tileOffset
+        else:
+            piece.y = piece.y - ((piece.y - tileStartY) % self.tileOffset)
+        return True
+    def commitToBoard(self, player, piece):
+        # merges board with piece image
+        newBoard = pg.Surface((self.boardSize, self.boardSize))
+        newBoard.blit(self.board, (0, 0))
+        newBoard.blit(piece.image, (piece.x - self.boardStartX, piece.y - self.boardStartY))
+        self.board = newBoard
+        Player.removePiece(player, piece)
+
+
+        
 

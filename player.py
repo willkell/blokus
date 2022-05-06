@@ -8,20 +8,33 @@ class Player:
         self.score = 0
         self.pieces = []
         self.out = False
-    def printPieces(self, surface, inventoryStartX, inventoryStartY, tileOffset):
+    def initInventory(self, inventoryStartX, inventoryStartY, tileOffset):
         placeX = inventoryStartX
         placeY = inventoryStartY
         maxHeight = 0
         for piece in self.pieces:
-            if (placeX + piece.width > pg.display.get_surface().get_size()[0]):
+            if (placeX + piece.width > pg.display.get_surface().get_size()[0] - tileOffset):
                 placeX = inventoryStartX
                 placeY += maxHeight + tileOffset
                 maxHeight = 0
-            surface.blit(piece.image, (placeX, placeY))
             piece.x = placeX
             piece.y = placeY
             placeX += piece.width + tileOffset
             if piece.height > maxHeight: maxHeight = piece.height
+    def printPieces(self, surface):
+        # placeX = inventoryStartX
+        # placeY = inventoryStartY
+        # maxHeight = 0
+        for piece in self.pieces:
+            # if (placeX + piece.width > pg.display.get_surface().get_size()[0]):
+            #     placeX = inventoryStartX
+            #     placeY += maxHeight + tileOffset
+            #     maxHeight = 0
+            surface.blit(piece.image, (piece.x, piece.y))
+            # piece.x = placeX
+            # piece.y = placeY
+            # placeX += piece.width + tileOffset
+            # if piece.height > maxHeight: maxHeight = piece.height
     def initPieces(self, tileOffset, tileSize, color):
         self.pieces.append(Piece.getLong5(tileOffset, tileSize, color))
         self.pieces.append(Piece.getLong4(tileOffset, tileSize, color))
@@ -44,14 +57,13 @@ class Player:
         self.pieces.append(Piece.getWeird(tileOffset, tileSize, color))
         self.pieces.append(Piece.getWeird2(tileOffset, tileSize, color))
         self.pieces.append(Piece.getBolt(tileOffset, tileSize, color))
-    def checkAndDrag(self, pos):
+    def checkForDrag(self, pos):
         for piece in self.pieces:
-            if piece.x + piece.width < pos[0] and piece.y + piece.height < pos[1]:
-                pass
             if piece.x < pos[0] < piece.x + piece.width and piece.y < pos[1] < piece.y + piece.height:
-                Piece.drag(piece)
-            elif piece.x > pos[0] and (piece.y > pos[1] or piece.y < pos[1] < piece.y + piece.height):
-                return
+                return True, piece
+        return False, None
+    def removePiece(self, piece):
+        self.pieces.remove(piece)
         
 
 
