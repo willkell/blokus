@@ -10,7 +10,11 @@ class Piece:
         self.image = pg.Surface((width, height))
         self.image.fill(color)
         self.color = color
-        self.dragable = False
+    def drag(self):
+        while pg.mouse.get_pressed()[0]:
+            self.x += pg.mouse.get_rel()[0]
+            self.y += pg.mouse.get_rel()[1]
+
     # .....
     @staticmethod
     def getLong5(tileOffset, tileSize, color):
@@ -141,7 +145,7 @@ class Piece:
         piece = Piece(0, 0, color, width, height)
         # transparency
         piece.image.set_colorkey((0, 1, 0))
-        pg.draw.rect(piece.image, (0, 1, 0), (tileSize, tileSize,tileOffset,tileOffset))
+        pg.draw.rect(piece.image, (0, 1, 0), (tileOffset, tileOffset,tileOffset,tileOffset))
         # lines
         pg.draw.rect(piece.image, (0, 0, 0), (0, 0, tileSize + tileOffset * 2, tileOffset), 1)
         pg.draw.rect(piece.image, (0, 0, 0), (tileSize + tileOffset, 0,tileOffset, tileSize + tileOffset), 1)
@@ -166,7 +170,7 @@ class Piece:
         # transparency
         piece.image.set_colorkey((0, 1, 0))
         pg.draw.rect(piece.image, (0, 1, 0), (0, tileOffset, tileSize + tileOffset,tileOffset))
-        pg.draw.rect(piece.image, (0, 1, 0), (tileSize + tileOffset * 2, tileOffset,tileOffset,tileOffset))
+        pg.draw.rect(piece.image, (0, 1, 0), (tileSize + tileOffset * 2+1, tileOffset,tileOffset,tileOffset))
         # lines
         pg.draw.rect(piece.image, (0, 0, 0), (0, 0, width, tileOffset), 1)
         pg.draw.rect(piece.image, (0, 0, 0), (tileSize + tileOffset, 0, tileOffset, tileSize + tileOffset), 1)
@@ -242,28 +246,52 @@ class Piece:
         # lines
         pg.draw.rect(piece.image, (0, 0, 0), (tileOffset, 0, tileSize + tileOffset,tileOffset), 1)
         pg.draw.rect(piece.image, (0, 0, 0), (0, tileOffset-1, tileSize + tileOffset,tileOffset), 1)
-        # todo
+        pg.draw.line(piece.image, (0, 0, 0), (tileOffset, tileOffset), (tileOffset, height))
+        pg.draw.line(piece.image, (0, 0, 0), (tileOffset + tileSize - 1, 0), (tileOffset + tileSize - 1, tileSize))
         return piece
     @staticmethod
     def getWeird(tileOffset, tileSize, color):
         width = tileOffset * 3 - (tileOffset - tileSize)
         height = tileOffset * 3 - (tileOffset - tileSize)
         piece = Piece(0, 0, color, width, height)
-        # todo
+        # transparency
+        piece.image.set_colorkey((0, 1, 0))
+        pg.draw.rect(piece.image, (0, 1, 0), (0, tileOffset,tileOffset,tileSize + tileOffset))
+        pg.draw.rect(piece.image, (0, 1, 0), (tileSize + tileOffset, 0,tileOffset,tileOffset))
+        pg.draw.rect(piece.image, (0, 1, 0), (tileSize + tileOffset, tileSize + tileOffset,tileOffset,tileOffset))
+        # lines
+        pg.draw.rect(piece.image, (0, 0, 0), (tileOffset, 0, tileOffset,height), 1)
+        pg.draw.rect(piece.image, (0, 0, 0), (0, 0, tileOffset + 1,tileOffset), 1)
+        pg.draw.rect(piece.image, (0, 0, 0), (tileOffset, tileOffset, tileSize + tileOffset,tileOffset), 1)
         return piece
     @staticmethod
     def getWeird2(tileOffset, tileSize, color):
         width = tileOffset * 3 - (tileOffset - tileSize)
         height = tileOffset * 2 - (tileOffset - tileSize)
         piece = Piece(0, 0, color, width, height)
-        # todo
+        # transparency
+        piece.image.set_colorkey((0, 1, 0))
+        pg.draw.rect(piece.image, (0, 1, 0), (0, 0, tileOffset,tileOffset))
+        pg.draw.rect(piece.image, (0, 1, 0), (tileSize + tileOffset, 0,tileOffset,tileOffset))
+        # lines
+        pg.draw.rect(piece.image, (0, 0, 0), (0, tileOffset, width,tileSize), 1)
+        pg.draw.rect(piece.image, (0, 0, 0), (tileOffset, 0, tileSize,height), 1)
         return piece
     @staticmethod
     def getBolt(tileOffset, tileSize, color):
         width = tileOffset * 4 - (tileOffset - tileSize)
         height = tileOffset * 2 - (tileOffset - tileSize)
         piece = Piece(0, 0, color, width, height)
-        # todo
+        # transparency
+        piece.image.set_colorkey((0, 1, 0))
+        pg.draw.rect(piece.image, (0, 1, 0), (tileOffset*3, 0, tileOffset,tileOffset))
+        pg.draw.rect(piece.image, (0, 1, 0), (0, tileOffset, tileSize + tileOffset,tileOffset))
+        # lines
+        pg.draw.rect(piece.image, (0, 0, 0), (0, 0, tileSize + 2*tileOffset,tileOffset), 1)
+        pg.draw.rect(piece.image, (0, 0, 0), (tileSize + tileOffset, tileOffset-1, tileSize + tileOffset,tileOffset), 1)
+        pg.draw.line(piece.image, (0, 0, 0), (tileOffset, 0), (tileOffset, tileOffset))
+        pg.draw.line(piece.image, (0, 0, 0), (tileSize + 2*tileOffset, tileOffset), (tileSize + 2*tileOffset, tileSize +tileOffset))
+        pg.draw.line(piece.image, (0, 0, 0), (tileSize + tileOffset, 0), (tileSize + tileOffset, tileOffset))
         return piece
 
     @property
