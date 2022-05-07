@@ -7,7 +7,7 @@ class Player:
         self.playerNum = playerNum
         self.score = 0
         self.pieces = []
-        self.out = False
+        self.color = (0, 0, 0)
     def initInventory(self, inventoryStartX, inventoryStartY, tileOffset):
         placeX = inventoryStartX
         placeY = inventoryStartY
@@ -64,6 +64,13 @@ class Player:
         return False, None
     def removePiece(self, piece):
         self.pieces.remove(piece)
+    @property
+    def color(self):
+        return self._color
+    @color.setter
+    def color(self, color):
+        self._color = color
+
         
 
 

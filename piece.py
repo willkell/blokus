@@ -2,7 +2,7 @@ import pygame as pg
 
 
 class Piece:
-    def __init__(self, x = 0, y = 0, color = (0, 0, 0), width = 0, height = 0):
+    def __init__(self, x = 0, y = 0, color = (0, 0, 0), width = 0, height = 0, sizeInTiles = (0, 0)):
         self.x = x
         self.y = y
         self.height = height
@@ -10,6 +10,7 @@ class Piece:
         self.image = pg.Surface((width, height))
         self.image.fill(color)
         self.color = color
+        self.sizeInTiles = sizeInTiles
     def drag(self, mouse_pos):
         self.x += mouse_pos[0]
         self.y += mouse_pos[1]
@@ -18,14 +19,15 @@ class Piece:
         temp = self.width
         self.width = self.height
         self.height = temp
-
-
+        temp = self.sizeInTiles[0]
+        self.sizeInTiles[0] = self.sizeInTiles[1]
+        self.sizeInTiles[1] = temp
     # .....
     @staticmethod
     def getLong5(tileOffset, tileSize, color):
         width = tileOffset * 5 - (tileOffset - tileSize)
         height = tileOffset - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height)
+        piece = Piece(0, 0, color, width, height, (1, 5))
         pg.draw.rect(piece.image, (0,0,0), (0, 0, width, height), 1)
         pg.draw.line(piece.image, (0, 0, 0), (tileSize, 0), (tileSize, height))
         pg.draw.line(piece.image, (0, 0, 0), (tileSize + tileOffset, 0), (tileSize + tileOffset, height))
@@ -37,7 +39,7 @@ class Piece:
     def getLong4(tileOffset, tileSize, color):
         width = tileOffset * 4 - (tileOffset - tileSize)
         height = tileOffset - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height)
+        piece = Piece(0, 0, color, width, height, (1, 4))
         pg.draw.rect(piece.image, (0,0,0), (0, 0, width, height), 1)
         pg.draw.line(piece.image, (0, 0, 0), (tileSize, 0), (tileSize, height))
         pg.draw.line(piece.image, (0, 0, 0), (tileSize + tileOffset, 0), (tileSize + tileOffset, height))
@@ -48,7 +50,7 @@ class Piece:
     def getLong3(tileOffset, tileSize, color):
         width = tileOffset * 3 - (tileOffset - tileSize)
         height = tileOffset - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height)
+        piece = Piece(0, 0, color, width, height, (1, 3))
         pg.draw.rect(piece.image, (0,0,0), (0, 0, width, height), 1)
         pg.draw.line(piece.image, (0, 0, 0), (tileSize, 0), (tileSize, height))
         pg.draw.line(piece.image, (0, 0, 0), (tileSize + tileOffset, 0), (tileSize + tileOffset, height))
@@ -58,7 +60,7 @@ class Piece:
     def getLong2(tileOffset, tileSize, color):
         width = tileOffset * 2 - (tileOffset - tileSize)
         height = tileOffset - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height)
+        piece = Piece(0, 0, color, width, height, (1, 2))
         pg.draw.rect(piece.image, (0,0,0), (0, 0, width, height), 1)
         pg.draw.line(piece.image, (0, 0, 0), (tileSize, 0), (tileSize, height))
         return piece
@@ -67,7 +69,7 @@ class Piece:
     def getDot(tileOffset, tileSize, color):
         width = tileOffset - (tileOffset - tileSize)
         height = tileOffset - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height)
+        piece = Piece(0, 0, color, width, height, (1, 1))
         pg.draw.rect(piece.image, (0,0,0), (0, 0, width, height), 1)
         return piece
     #    .
@@ -76,7 +78,7 @@ class Piece:
     def getL4(tileOffset, tileSize, color):
         width = tileOffset * 4 - (tileOffset - tileSize)
         height = tileOffset * 2 - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height)
+        piece = Piece(0, 0, color, width, height, (2, 4))
         # transparency
         piece.image.set_colorkey((0, 1, 0))
         pg.draw.rect(piece.image, (0, 1, 0), (0, 0, tileSize + tileOffset * 2, tileSize))
@@ -93,7 +95,7 @@ class Piece:
     def getL3(tileOffset, tileSize, color):
         width = tileOffset * 3 - (tileOffset - tileSize)
         height = tileOffset * 2 - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height)
+        piece = Piece(0, 0, color, width, height, (2, 3))
         # transparency
         piece.image.set_colorkey((0, 1, 0))
         pg.draw.rect(piece.image, (0, 1, 0), (0, 0, tileSize + tileOffset,tileSize))
@@ -106,7 +108,7 @@ class Piece:
     def getL2(tileOffset, tileSize, color):
         width = tileOffset * 2 - (tileOffset - tileSize)
         height = tileOffset * 2 - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height)
+        piece = Piece(0, 0, color, width, height, (2, 2))
         # transparency
         piece.image.set_colorkey((0, 1, 0))
         pg.draw.rect(piece.image, (0, 1, 0), (0, 0, tileSize,tileSize))
@@ -118,7 +120,7 @@ class Piece:
     def getL33(tileOffset, tileSize, color):
         width = tileOffset * 3 - (tileOffset - tileSize)
         height = tileOffset * 3 - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height)
+        piece = Piece(0, 0, color, width, height, (3, 3))
         # transparency
         piece.image.set_colorkey((0, 1, 0))
         pg.draw.rect(piece.image, (0, 1, 0), (0, 0, tileSize + tileOffset,tileSize + tileOffset))
@@ -132,7 +134,7 @@ class Piece:
     def getPlus(tileOffset, tileSize, color):
         width = tileOffset * 3 - (tileOffset - tileSize)
         height = tileOffset * 3 - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height)
+        piece = Piece(0, 0, color, width, height, (3, 3))
         # transparency
         piece.image.set_colorkey((0, 1, 0))
         pg.draw.rect(piece.image, (0, 1, 0), (0, 0,tileOffset,tileOffset))
@@ -147,7 +149,7 @@ class Piece:
     def getHat(tileOffset, tileSize, color):
         width = tileOffset * 3 - (tileOffset - tileSize)
         height = tileOffset * 2 - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height)
+        piece = Piece(0, 0, color, width, height, (2, 3))
         # transparency
         piece.image.set_colorkey((0, 1, 0))
         pg.draw.rect(piece.image, (0, 1, 0), (tileOffset, tileOffset,tileOffset,tileOffset))
@@ -160,7 +162,7 @@ class Piece:
     def getSquare(tileOffset, tileSize, color):
         width = tileOffset * 2 - (tileOffset - tileSize)
         height = tileOffset * 2 - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height)
+        piece = Piece(0, 0, color, width, height, (2, 2))
         # transparency
         # lines
         pg.draw.rect(piece.image, (0, 0, 0), (0, 0, tileSize + tileOffset, tileSize + tileOffset), 1)
@@ -171,7 +173,7 @@ class Piece:
     def getF(tileOffset, tileSize, color):
         width = tileOffset * 4 - (tileOffset - tileSize)
         height = tileOffset * 2 - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height)
+        piece = Piece(0, 0, color, width, height, (2, 4))
         # transparency
         piece.image.set_colorkey((0, 1, 0))
         pg.draw.rect(piece.image, (0, 1, 0), (0, tileOffset, tileSize + tileOffset,tileOffset))
@@ -185,7 +187,7 @@ class Piece:
     def getZ(tileOffset, tileSize, color):
         width = tileOffset * 3 - (tileOffset - tileSize)
         height = tileOffset * 3 - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height)
+        piece = Piece(0, 0, color, width, height, (3, 3))
         # transparency
         piece.image.set_colorkey((0, 1, 0))
         pg.draw.rect(piece.image, (0, 1, 0), (0, 0, tileSize + tileOffset,tileOffset))
@@ -199,7 +201,7 @@ class Piece:
     def getStair(tileOffset, tileSize, color):
         width = tileOffset * 3 - (tileOffset - tileSize)
         height = tileOffset * 3 - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height)
+        piece = Piece(0, 0, color, width, height, (3, 3))
         # transparency
         piece.image.set_colorkey((0, 1, 0))
         pg.draw.rect(piece.image, (0, 1, 0), (0, 0, tileSize + tileOffset,tileOffset))
@@ -216,7 +218,7 @@ class Piece:
     def getT(tileOffset, tileSize, color):
         width = tileOffset * 3 - (tileOffset - tileSize)
         height = tileOffset * 3 - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height)
+        piece = Piece(0, 0, color, width, height, (3, 3))
         # transparency
         piece.image.set_colorkey((0, 1, 0))
         pg.draw.rect(piece.image, (0, 1, 0), (tileOffset, 0, tileSize + tileOffset,tileOffset))
@@ -230,7 +232,7 @@ class Piece:
     def getP(tileOffset, tileSize, color):
         width = tileOffset * 3 - (tileOffset - tileSize)
         height = tileOffset * 2 - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height)
+        piece = Piece(0, 0, color, width, height, (2, 3))
         # transparency
         piece.image.set_colorkey((0, 1, 0))
         pg.draw.rect(piece.image, (0, 1, 0), (tileSize + tileOffset, 0, tileOffset,tileOffset))
@@ -243,7 +245,7 @@ class Piece:
     def getSquiggle(tileOffset, tileSize, color):
         width = tileOffset * 3 - (tileOffset - tileSize)
         height = tileOffset * 2 - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height)
+        piece = Piece(0, 0, color, width, height, (2, 3))
         # transparency
         piece.image.set_colorkey((0, 1, 0))
         pg.draw.rect(piece.image, (0, 1, 0), (0, 0, tileOffset,tileOffset))
@@ -258,7 +260,7 @@ class Piece:
     def getWeird(tileOffset, tileSize, color):
         width = tileOffset * 3 - (tileOffset - tileSize)
         height = tileOffset * 3 - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height)
+        piece = Piece(0, 0, color, width, height, (3, 3))
         # transparency
         piece.image.set_colorkey((0, 1, 0))
         pg.draw.rect(piece.image, (0, 1, 0), (0, tileOffset,tileOffset,tileSize + tileOffset))
@@ -273,7 +275,7 @@ class Piece:
     def getWeird2(tileOffset, tileSize, color):
         width = tileOffset * 3 - (tileOffset - tileSize)
         height = tileOffset * 2 - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height)
+        piece = Piece(0, 0, color, width, height, (2, 3))
         # transparency
         piece.image.set_colorkey((0, 1, 0))
         pg.draw.rect(piece.image, (0, 1, 0), (0, 0, tileOffset,tileOffset))
@@ -286,7 +288,7 @@ class Piece:
     def getBolt(tileOffset, tileSize, color):
         width = tileOffset * 4 - (tileOffset - tileSize)
         height = tileOffset * 2 - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height)
+        piece = Piece(0, 0, color, width, height, (2, 4))
         # transparency
         piece.image.set_colorkey((0, 1, 0))
         pg.draw.rect(piece.image, (0, 1, 0), (tileOffset*3, 0, tileOffset,tileOffset))
@@ -336,5 +338,13 @@ class Piece:
     @image.setter
     def image(self, value):
         self.__image = value
+    @property
+    def sizeInTiles(self):
+        return self.__sizeInTiles
+    @sizeInTiles.setter
+    def sizeInTiles(self, value):
+        self.__sizeInTiles = value
+
+
 
 
