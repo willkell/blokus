@@ -25,7 +25,7 @@ class Game:
         self.tileOffset = 0
         self.tileColor = (200, 200, 200)
         self.board = pg.Surface((0, 0))
-        self.boardArray = [[Tile(self.tileColor)] * 20] * 20
+        self.boardArray = [[self.tileColor] * 20] * 20
 
     def run(self):
         pg.init()
@@ -106,24 +106,19 @@ class Game:
     def set_up_screen(self, height, width):
         self.screenHeight = width
         self.screenWidth = height
-        self.boardSize = self.screenHeight * 0.8
+        self.boardSize = min(self.screenHeight, self.screenWidth) * 0.8
         self.boardStartX = self.screenHeight * 0.05
         self.boardStartY = self.screenHeight * 0.1
-        self.inventoryStartX = self.boardStartX + self.boardSize + self.boardStartX
-        self.inventoryStartY = self.boardStartY
+        if self.screenWidth > self.screenHeight:
+            self.inventoryStartX = self.boardStartX + self.boardSize + self.boardStartX
+            self.inventoryStartY = self.boardStartY
+        else:
+            self.inventoryStartX = self.boardStartX
+            self.inventoryStartY = self.boardStartY + self.boardSize + self.boardStartY
         self.tileSize = (self.boardSize - (self.borderSize * 2) - 19) / 20
         self.tileOffset = (self.boardSize - (self.borderSize * 2)) / 20
 
-    def dropPiece(self, piece):
-        # returns false if piece is not on board
-        if (
-            piece.x < self.boardStartX
-            or piece.x > self.boardStartX + self.boardSize
-            or piece.y < self.boardStartY
-            or piece.y > self.boardStartY + self.boardSize
-        ):
-            return False
-        # snaps to grid
+    def snapToGrid(self, piece):
         tileStartX = self.boardStartX + self.borderSize
         tileStartY = self.boardStartY + self.borderSize
         if (piece.x - tileStartX) % self.tileOffset > self.tileOffset / 2:
@@ -138,7 +133,59 @@ class Game:
             )
         else:
             piece.y = piece.y - ((piece.y - tileStartY) % self.tileOffset)
+
+    def dropPiece(self, piece):
+        # returns false if piece is not on board
+        if (
+            piece.x <= self.boardStartX + self.borderSize - self.tileOffset / 2
+            or piece.x + piece.width
+            >= self.boardStartX + self.boardSize - self.borderSize + self.tileOffset / 2
+            or piece.y <= self.boardStartY + self.borderSize - self.tileOffset / 2
+            or piece.y + piece.height
+            >= self.boardStartY + self.boardSize - self.borderSize + self.tileOffset / 2
+        ):
+            return False
+        self.snapToGrid(piece)
+
         return True
+
+    def withinBoard(self, row, col):
+        return 0 <= row < 20 and 0 <= col < 20
+
+    def checkValidity(self, player, piece):
+        isValid = False
+        rowTileArrStart = (
+            int((piece.y - self.boardStartY - self.borderSize) / self.tileOffset) - 1
+        )
+        colTileArrStart = (
+            int((piece.x - self.boardStartX - self.borderSize) / self.tileOffset) - 1
+        )
+        rowTile = rowTileArrStart
+        colTile = colTileArrStart
+        for row in piece.array:
+            for tile in row:
+                if tile == "p":
+                    if (
+                        self.withinBoard(rowTile, colTile)
+                        and self.boardArray[rowTile][colTile] != self.tileColor
+                    ):
+                        return False
+                elif tile == "n":
+                    if (
+                        self.withinBoard(rowTile, colTile)
+                        and self.boardArray[rowTile][colTile] == player.color
+                    ):
+                        return False
+                elif tile == "y":
+                    if (
+                        self.withinBoard(rowTile, colTile)
+                        and self.boardArray[rowTile][colTile] == player.color
+                    ):
+                        isValid = True
+                colTile += 1
+            rowTile += 1
+            colTile = colTileArrStart
+        return isValid
 
     def commitToBoard(self, player, piece):
         # merges board image with piece image
@@ -150,78 +197,18 @@ class Game:
         self.board = newBoard
         Player.removePiece(player, piece)
         # merge piece image to board array
-        rowTileStart = int(
-            (piece.y - self.boardStartY - self.borderSize) / self.tileOffset
+        rowTileArrStart = (
+            int((piece.y - self.boardStartY - self.borderSize) / self.tileOffset) - 1
         )
-        colTileStart = int(
-            (piece.x - self.boardStartX - self.borderSize) / self.tileOffset
+        colTileArrStart = (
+            int((piece.x - self.boardStartX - self.borderSize) / self.tileOffset) - 1
         )
-        rowTile = rowTileStart
-        colTile = colTileStart
-        for row in np.arange(self.tileOffset / 2, piece.height, self.tileOffset):
-            for col in np.arange(self.tileOffset / 2, piece.width, self.tileOffset):
-                if piece.image.get_at((int(col), int(row))) == piece.color:
-                    self.boardArray[rowTile][colTile].color = piece.color
+        rowTile = rowTileArrStart
+        colTile = colTileArrStart
+        for row in piece.array:
+            for tile in row:
+                if tile == "p":
+                    self.boardArray[rowTile][colTile] = player.color
                 colTile += 1
             rowTile += 1
-        # sets validity of board
-        for row in range(rowTileStart - 1, rowTileStart + piece.sizeInTiles[0] + 1):
-            for col in range(colTileStart - 1, colTileStart + piece.sizeInTiles[1] + 1):
-                if row >= 0 and row <= 19 and col >= 0 and col <= 19:
-                    if self.boardArray[row][col].color == self.tileColor:
-                        pass
-
-    def initBoard(self):
-        self.boardArray[0][0].valid1 = True
-        self.boardArray[0][-1].valid2 = True
-        self.boardArray[-1][-1].valid3 = True
-        self.boardArray[-1][0].valid4 = True
-
-
-class Tile:
-    def __init__(self, color):
-        self.color = color
-        self.valid1 = False
-        self.valid2 = False
-        self.valid3 = False
-        self.valid4 = False
-
-    @property
-    def color(self):
-        return self._color
-
-    @color.setter
-    def color(self, color):
-        self._color = color
-
-    @property
-    def valid1(self):
-        return self._valid1
-
-    @valid1.setter
-    def valid1(self, valid1):
-        self._valid1 = valid1
-
-    @property
-    def valid2(self):
-        return self._valid2
-
-    @valid2.setter
-    def valid2(self, valid2):
-        self._valid2 = valid2
-
-    @property
-    def valid3(self):
-        return self._valid3
-
-    @valid3.setter
-    def valid3(self, valid3):
-        self._valid3 = valid3
-
-    @property
-    def valid4(self):
-        return self._valid4
-
-    @valid4.setter
-    def valid4(self, valid4):
-        self._valid4 = valid4
+            colTile = colTileArrStart
