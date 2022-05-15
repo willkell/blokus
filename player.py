@@ -8,19 +8,25 @@ class Player:
         self.score = 0
         self.pieces = []
         self.color = (0, 0, 0)
+
     def initInventory(self, inventoryStartX, inventoryStartY, tileOffset):
         placeX = inventoryStartX
         placeY = inventoryStartY
         maxHeight = 0
         for piece in self.pieces:
-            if (placeX + piece.width > pg.display.get_surface().get_size()[0] - tileOffset):
+            if (
+                placeX + piece.width
+                > pg.display.get_surface().get_size()[0] - tileOffset
+            ):
                 placeX = inventoryStartX
                 placeY += maxHeight + tileOffset
                 maxHeight = 0
             piece.x = placeX
             piece.y = placeY
             placeX += piece.width + tileOffset
-            if piece.height > maxHeight: maxHeight = piece.height
+            if piece.height > maxHeight:
+                maxHeight = piece.height
+
     def printPieces(self, surface):
         # placeX = inventoryStartX
         # placeY = inventoryStartY
@@ -35,6 +41,7 @@ class Player:
             # piece.y = placeY
             # placeX += piece.width + tileOffset
             # if piece.height > maxHeight: maxHeight = piece.height
+
     def initPieces(self, tileOffset, tileSize, color):
         self.pieces.append(Piece.getLong5(tileOffset, tileSize, color))
         self.pieces.append(Piece.getLong4(tileOffset, tileSize, color))
@@ -57,22 +64,23 @@ class Player:
         self.pieces.append(Piece.getWeird(tileOffset, tileSize, color))
         self.pieces.append(Piece.getWeird2(tileOffset, tileSize, color))
         self.pieces.append(Piece.getBolt(tileOffset, tileSize, color))
+
     def checkForDrag(self, pos):
         for piece in self.pieces:
-            if piece.x < pos[0] < piece.x + piece.width and piece.y < pos[1] < piece.y + piece.height:
+            if (
+                piece.x < pos[0] < piece.x + piece.width
+                and piece.y < pos[1] < piece.y + piece.height
+            ):
                 return True, piece
         return False, None
+
     def removePiece(self, piece):
         self.pieces.remove(piece)
+
     @property
     def color(self):
         return self._color
+
     @color.setter
     def color(self, color):
         self._color = color
-
-        
-
-
-
-
