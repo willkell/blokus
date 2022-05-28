@@ -30,6 +30,24 @@ class Game:
             self.boardArray.append([])
             for col in range(20):
                 self.boardArray[row].append(self.tileColor)
+        self.nextPlayer = {
+            self.player1: self.player2,
+            self.player2: self.player3,
+            self.player3: self.player4,
+            self.player4: self.player1,
+        }
+        self.safeCorners = {
+            self.player1: [0, 0],
+            self.player2: [0, 19],
+            self.player3: [19, 19],
+            self.player4: [19, 0],
+        }
+        self.importantTile = {
+            self.player1: [1, 1],
+            self.player2: [1, -2],
+            self.player3: [-2, -2],
+            self.player4: [-2, 1],
+        }
 
     def run(self):
         pg.init()
@@ -42,16 +60,34 @@ class Game:
         clock = pg.time.Clock()
         is_running = True
         self.player1.color = (255, 0, 0)
+        self.player2.color = (0, 255, 0)
+        self.player3.color = (0, 0, 255)
+        self.player4.color = (255, 255, 0)
         Player.initPieces(
             self.player1, self.tileOffset, self.tileSize, self.player1.color
         )
         Player.initInventory(
             self.player1, self.inventoryStartX, self.inventoryStartY, self.tileOffset
         )
+        Player.initPieces(
+            self.player2, self.tileOffset, self.tileSize, self.player2.color
+        )
+        Player.initInventory(
+            self.player3, self.inventoryStartX, self.inventoryStartY, self.tileOffset
+        )
+        Player.initPieces(
+            self.player3, self.tileOffset, self.tileSize, self.player3.color
+        )
+        Player.initInventory(
+            self.player4, self.inventoryStartX, self.inventoryStartY, self.tileOffset
+        )
+        Player.initPieces(
+            self.player4, self.tileOffset, self.tileSize, self.player4.color
+        )
+        currentPlayer = self.player1
         canDrag = False
         dropped = False
         currPiece = None
-        round = 1
 
         while is_running:
             for event in pg.event.get():
@@ -59,33 +95,69 @@ class Game:
                     event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE
                 ):
                     is_running = False
+                    print("Game over")
+                    print("Player 1:", self.player1.score)
+                    print("Player 2:", self.player2.score)
+                    print("Player 3:", self.player3.score)
+                    print("Player 4:", self.player4.score)
+                    maxScore = max(
+                        self.player1.score,
+                        self.player2.score,
+                        self.player3.score,
+                        self.player4.score,
+                    )
+                    if self.player1.score == maxScore:
+                        print("Player 1 wins", end="")
+                    elif self.player2.score == maxScore:
+                        print("Player 2 wins", end="")
+                    elif self.player3.score == maxScore:
+                        print("Player 3 wins", end="")
+                    elif self.player4.score == maxScore:
+                        print("Player 4 wins", end="")
+                    print(" With a score of:", maxScore)
+
                     pg.quit()
                     sys.exit()
                 if event.type == pg.MOUSEBUTTONDOWN:
-                    canDrag, currPiece = Player.checkForDrag(self.player1, event.pos)
+                    canDrag, currPiece = Player.checkForDrag(currentPlayer, event.pos)
                 if event.type == pg.MOUSEBUTTONUP:
                     if canDrag:
                         dropped = self.dropPiece(currPiece)
                     canDrag = False
+                if event.type == pg.KEYDOWN and event.key == pg.K_p:
+                    currentPlayer = self.getNextPlayer(currentPlayer)
+                    Player.initInventory(
+                        currentPlayer,
+                        self.inventoryStartX,
+                        self.inventoryStartY,
+                        self.tileOffset,
+                    )
                 if event.type == pg.KEYDOWN and event.key == pg.K_RETURN:
                     if dropped and (
-                        self.checkValidityTurn1(self.player1, currPiece)
-                        if round == 1
-                        else self.checkValidity(self.player1, currPiece)
+                        self.checkValidityTurn1(currentPlayer, currPiece)
+                        if Player.hasPlayed(currentPlayer)
+                        else self.checkValidity(currentPlayer, currPiece)
                     ):
-                        self.commitToBoard(self.player1, currPiece)
+                        self.commitToBoard(currentPlayer, currPiece)
+                        currentPlayer.score += currPiece.numTiles
                         dropped = False
                         currPiece = None
                         Player.initInventory(
-                            self.player1,
+                            currentPlayer,
                             self.inventoryStartX,
                             self.inventoryStartY,
                             self.tileOffset,
                         )
-                        round += 1
+                        currentPlayer = self.getNextPlayer(currentPlayer)
+                        Player.initInventory(
+                            currentPlayer,
+                            self.inventoryStartX,
+                            self.inventoryStartY,
+                            self.tileOffset,
+                        )
                     else:
                         Player.initInventory(
-                            self.player1,
+                            currentPlayer,
                             self.inventoryStartX,
                             self.inventoryStartY,
                             self.tileOffset,
@@ -100,7 +172,7 @@ class Game:
                 Piece.drag(currPiece, mouse_rel)
             screen.fill((255, 255, 255, 255))
             screen.blit(self.board, (self.boardStartX, self.boardStartY))
-            Player.printPieces(self.player1, screen)
+            Player.printPieces(currentPlayer, screen)
             pg.display.flip()
             clock.tick(60)
 
@@ -178,14 +250,30 @@ class Game:
     def withinBoard(self, row, col):
         return 0 <= row < 20 and 0 <= col < 20
 
+    def isOnTile(self, player, piece):
+        rowTileArrStart = round(
+            ((piece.y - self.boardStartY - self.borderSize) / self.tileOffset) - 1
+        )
+        colTileArrStart = round(
+            ((piece.x - self.boardStartX - self.borderSize) / self.tileOffset) - 1
+        )
+        rowTile = rowTileArrStart
+        colTile = colTileArrStart
+        for row in piece.array:
+            for tile in row:
+                if tile == "p":
+                    if (
+                        rowTile == self.safeCorners[player][0]
+                        and colTile == self.safeCorners[player][1]
+                    ):
+                        return True
+                colTile += 1
+            rowTile += 1
+            colTile = colTileArrStart
+        return False
+
     def checkValidityTurn1(self, player, piece):
-        pieceRow = round(
-            (piece.y - self.boardStartY - self.borderSize) / self.tileOffset
-        )
-        pieceCol = round(
-            (piece.x - self.boardStartX - self.borderSize) / self.tileOffset
-        )
-        return pieceRow == 0 and pieceCol == 0 and piece.array[1][1] == "p"
+        return self.isOnTile(player, piece)
 
     def validFailureMsg(self, row, col, should, was):
         return "Tile at row {}, col {} should be {} but was {}".format(
@@ -276,3 +364,6 @@ class Game:
                 colTile += 1
             rowTile += 1
             colTile = colTileArrStart
+
+    def getNextPlayer(self, player):
+        return self.nextPlayer[player]

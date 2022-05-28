@@ -64,6 +64,9 @@ class Player:
                 return True, piece
         return False, None
 
+    def hasPlayed(self):
+        return len(self.pieces) == 21
+
     def removePiece(self, piece):
         self.pieces.remove(piece)
 
@@ -74,3 +77,11 @@ class Player:
     @color.setter
     def color(self, color):
         self._color = color
+
+    @property
+    def score(self):
+        return self._score
+
+    @score.setter
+    def score(self, score):
+        self._score = score
