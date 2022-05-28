@@ -1,4 +1,5 @@
 import pygame as pg
+
 from piece import Piece
 
 
@@ -28,19 +29,8 @@ class Player:
                 maxHeight = piece.height
 
     def printPieces(self, surface):
-        # placeX = inventoryStartX
-        # placeY = inventoryStartY
-        # maxHeight = 0
         for piece in self.pieces:
-            # if (placeX + piece.width > pg.display.get_surface().get_size()[0]):
-            #     placeX = inventoryStartX
-            #     placeY += maxHeight + tileOffset
-            #     maxHeight = 0
             surface.blit(piece.image, (piece.x, piece.y))
-            # piece.x = placeX
-            # piece.y = placeY
-            # placeX += piece.width + tileOffset
-            # if piece.height > maxHeight: maxHeight = piece.height
 
     def initPieces(self, tileOffset, tileSize, color):
         self.pieces.append(Piece.getLong5(tileOffset, tileSize, color))

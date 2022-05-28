@@ -1,6 +1,6 @@
 import sys
 
-import numpy as np
+# import numpy as np
 import pygame as pg
 
 from piece import Piece
@@ -25,7 +25,11 @@ class Game:
         self.tileOffset = 0
         self.tileColor = (200, 200, 200)
         self.board = pg.Surface((0, 0))
-        self.boardArray = [[self.tileColor] * 20] * 20
+        self.boardArray = []
+        for row in range(20):
+            self.boardArray.append([])
+            for col in range(20):
+                self.boardArray[row].append(self.tileColor)
 
     def run(self):
         pg.init()
@@ -47,6 +51,7 @@ class Game:
         canDrag = False
         dropped = False
         currPiece = None
+        round = 1
 
         while is_running:
             for event in pg.event.get():
@@ -63,7 +68,11 @@ class Game:
                         dropped = self.dropPiece(currPiece)
                     canDrag = False
                 if event.type == pg.KEYDOWN and event.key == pg.K_RETURN:
-                    if dropped:
+                    if dropped and (
+                        self.checkValidityTurn1(self.player1, currPiece)
+                        if round == 1
+                        else self.checkValidity(self.player1, currPiece)
+                    ):
                         self.commitToBoard(self.player1, currPiece)
                         dropped = False
                         currPiece = None
@@ -73,6 +82,15 @@ class Game:
                             self.inventoryStartY,
                             self.tileOffset,
                         )
+                        round += 1
+                    else:
+                        Player.initInventory(
+                            self.player1,
+                            self.inventoryStartX,
+                            self.inventoryStartY,
+                            self.tileOffset,
+                        )
+
                 if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
                     if currPiece:
                         Piece.rotate(currPiece)
@@ -139,42 +157,86 @@ class Game:
         if (
             piece.x <= self.boardStartX + self.borderSize - self.tileOffset / 2
             or piece.x + piece.width
-            >= self.boardStartX + self.boardSize - self.borderSize + self.tileOffset / 2
+            >= self.boardStartX
+            + self.boardSize
+            - self.borderSize
+            + self.tileOffset / 2
+            - 1
             or piece.y <= self.boardStartY + self.borderSize - self.tileOffset / 2
             or piece.y + piece.height
-            >= self.boardStartY + self.boardSize - self.borderSize + self.tileOffset / 2
+            >= self.boardStartY
+            + self.boardSize
+            - self.borderSize
+            + self.tileOffset / 2
+            - 1
         ):
             return False
-        self.snapToGrid(piece)
 
+        self.snapToGrid(piece)
         return True
 
     def withinBoard(self, row, col):
         return 0 <= row < 20 and 0 <= col < 20
 
-    def checkValidity(self, player, piece):
-        isValid = False
-        rowTileArrStart = (
-            int((piece.y - self.boardStartY - self.borderSize) / self.tileOffset) - 1
+    def checkValidityTurn1(self, player, piece):
+        pieceRow = round(
+            (piece.y - self.boardStartY - self.borderSize) / self.tileOffset
         )
-        colTileArrStart = (
-            int((piece.x - self.boardStartX - self.borderSize) / self.tileOffset) - 1
+        pieceCol = round(
+            (piece.x - self.boardStartX - self.borderSize) / self.tileOffset
+        )
+        return pieceRow == 0 and pieceCol == 0 and piece.array[1][1] == "p"
+
+    def validFailureMsg(self, row, col, should, was):
+        return "Tile at row {}, col {} should be {} but was {}".format(
+            row, col, should, was
+        )
+
+    def checkValidity(self, player, piece):
+        # print("Before piece:")
+        # for row in range(20):
+        #     for col in range(20):
+        #         if self.boardArray[row][col] == self.tileColor:
+        #             print("n ", end="")
+        #         else:
+        #             print("y ", end="")
+        #     print()
+        isValid = False
+        rowTileArrStart = round(
+            ((piece.y - self.boardStartY - self.borderSize) / self.tileOffset) - 1
+        )
+        colTileArrStart = round(
+            ((piece.x - self.boardStartX - self.borderSize) / self.tileOffset) - 1
         )
         rowTile = rowTileArrStart
         colTile = colTileArrStart
         for row in piece.array:
             for tile in row:
+                # print("checking tile at row {}, col {}".format(rowTile, colTile))
                 if tile == "p":
                     if (
                         self.withinBoard(rowTile, colTile)
                         and self.boardArray[rowTile][colTile] != self.tileColor
                     ):
+                        # print(
+                        #     self.validFailureMsg(
+                        #         rowTile,
+                        #         colTile,
+                        #         "empty",
+                        #         "full",
+                        #     )
+                        # )
                         return False
                 elif tile == "n":
                     if (
                         self.withinBoard(rowTile, colTile)
                         and self.boardArray[rowTile][colTile] == player.color
                     ):
+                        # print(
+                        #     self.validFailureMsg(
+                        #         rowTile, colTile, "not same color", "same color"
+                        #     )
+                        # )
                         return False
                 elif tile == "y":
                     if (
@@ -185,6 +247,8 @@ class Game:
                 colTile += 1
             rowTile += 1
             colTile = colTileArrStart
+        # if not isValid:
+        #     print("No piece in range")
         return isValid
 
     def commitToBoard(self, player, piece):
@@ -197,11 +261,11 @@ class Game:
         self.board = newBoard
         Player.removePiece(player, piece)
         # merge piece image to board array
-        rowTileArrStart = (
-            int((piece.y - self.boardStartY - self.borderSize) / self.tileOffset) - 1
+        rowTileArrStart = round(
+            ((piece.y - self.boardStartY - self.borderSize) / self.tileOffset) - 1
         )
-        colTileArrStart = (
-            int((piece.x - self.boardStartX - self.borderSize) / self.tileOffset) - 1
+        colTileArrStart = round(
+            ((piece.x - self.boardStartX - self.borderSize) / self.tileOffset) - 1
         )
         rowTile = rowTileArrStart
         colTile = colTileArrStart

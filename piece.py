@@ -13,14 +13,21 @@ class Piece:
         self.image.fill(color)
         self.color = color
         self.sizeInTiles = sizeInTiles
-        self.array = [["x"] * (sizeInTiles[1] + 2)] * (sizeInTiles[0] + 2)
+        self.array = []
+        for row in range(sizeInTiles[1] + 2):
+            rowArray = []
+            for col in range(sizeInTiles[0] + 2):
+                rowArray.append("x")
+            self.array.append(rowArray)
 
     def drag(self, mouse_rel):
         self.x += mouse_rel[0]
         self.y += mouse_rel[1]
 
     def rotate(self):
-        self.image = pg.transform.rotate(self.image, 90)
+        # print("before rotation:")
+        # self.printArray()
+        self.image = pg.transform.rotate(self.image, -90)
         temp = self.width
         self.width = self.height
         self.height = temp
@@ -28,7 +35,12 @@ class Piece:
         self.sizeInTiles[0] = self.sizeInTiles[1]
         self.sizeInTiles[1] = temp
         # rotate array clockwise
-        newArray = [["x"] * len(self.array)] * len(self.array[0])
+        newArray = []
+        for row in range(self.sizeInTiles[0] + 2):
+            rowArray = []
+            for col in range(self.sizeInTiles[1] + 2):
+                rowArray.append("x")
+            newArray.append(rowArray)
         row = 0
         col = 0
 
@@ -36,10 +48,18 @@ class Piece:
             for j in reversed(range(len(self.array))):
                 newArray[row][col] = self.array[j][i]
                 col += 1
-                if col == len(newArray[0]):
-                    row += 1
-                    col = 0
+            row += 1
+            col = 0
         self.array = newArray
+        # print("after rotation:")
+        # self.printArray()
+
+    def printArray(self):
+        for row in self.array:
+            for char in row:
+                print(char + " ", end="")
+            print("\n")
+        print("\n")
 
     # .....
     @staticmethod
@@ -295,7 +315,7 @@ class Piece:
             [" ", "y", "n", "y", " "],
             ["y", "n", "p", "n", "y"],
             ["n", "p", "p", "p", "n"],
-            ["y", "n", "n", "n", "y"],
+            ["y", "n", "p", "n", "y"],
             [" ", "y", "n", "y", " "],
         ]
         # transparency
@@ -387,6 +407,7 @@ class Piece:
             ["y", "n", "n", "n", "n", "y"],
             ["n", "p", "p", "p", "p", "n"],
             ["y", "n", "n", "p", "n", "y"],
+            [" ", " ", "y", "n", "y", " "],
         ]
         # transparency
         piece.image.set_colorkey((0, 1, 0))
