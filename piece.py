@@ -11,6 +11,8 @@ class Piece:
         height=0,
         sizeInTiles=[0, 0],
         numTiles=0,
+        symmetryX=False,
+        symmetryY=False,
     ):
         self.x = x
         self.y = y
@@ -22,6 +24,8 @@ class Piece:
         self.sizeInTiles = sizeInTiles
         self.array = []
         self.numTiles = numTiles
+        self.symmetryX = symmetryX
+        self.symmetryY = symmetryY
         for row in range(sizeInTiles[1] + 2):
             rowArray = []
             for col in range(sizeInTiles[0] + 2):
@@ -32,7 +36,55 @@ class Piece:
         self.x += mouse_rel[0]
         self.y += mouse_rel[1]
 
-    def rotate(self):
+    def flipOverX(self):
+        self.image = pg.transform.flip(self.image, True, False)
+        newArray = []
+        # for row in range(len(self.array)):
+        #     rowArray = []
+        #     for col in range(len(self.array[0])):
+        #         rowArray.append("x")
+        #     newArray.append(rowArray)
+        # row = 0
+        # col = 0
+        # for r in self.array:
+        #     for c in reversed(r):
+        #         newArray[row][col] = c
+        #         col += 1
+        #     row += 1
+        #     col = 0
+        # self.array = newArray
+        for r in self.array:
+            rowArray = []
+            for c in reversed(r):
+                rowArray.append(c)
+            newArray.append(rowArray)
+        self.array = newArray
+
+    def flipOverY(self):
+        self.image = pg.transform.flip(self.image, False, True)
+        newArray = []
+        # for row in range(len(self.array)):
+        #     rowArray = []
+        #     for col in range(len(self.array[0])):
+        #         rowArray.append("x")
+        #     newArray.append(rowArray)
+        # row = 0
+        # col = 0
+        # for r in reversed(self.array):
+        #     for c in r:
+        #         newArray[row][col] = c
+        #         col += 1
+        #     row += 1
+        #     col = 0
+        # self.array = newArray
+        for r in reversed(self.array):
+            rowArray = []
+            for c in r:
+                rowArray.append(c)
+            newArray.append(rowArray)
+        self.array = newArray
+
+    def rotateCCW(self):
         # print("before rotation:")
         # self.printArray()
         self.image = pg.transform.rotate(self.image, -90)
@@ -42,11 +94,11 @@ class Piece:
         temp = self.sizeInTiles[0]
         self.sizeInTiles[0] = self.sizeInTiles[1]
         self.sizeInTiles[1] = temp
-        # rotate array clockwise
+        # rotate array counterclockwise
         newArray = []
-        for row in range(self.sizeInTiles[0] + 2):
+        for row in range(len(self.array[0])):
             rowArray = []
-            for col in range(self.sizeInTiles[1] + 2):
+            for col in range(len(self.array)):
                 rowArray.append("x")
             newArray.append(rowArray)
         row = 0
@@ -59,8 +111,42 @@ class Piece:
             row += 1
             col = 0
         self.array = newArray
+        # set symmetry
+        temp = self.symmetryX
+        self.symmetryX = self.symmetryY
+        self.symmetryY = temp
         # print("after rotation:")
         # self.printArray()
+
+    def rotateCW(self):
+        self.image = pg.transform.rotate(self.image, 90)
+        temp = self.width
+        self.width = self.height
+        self.height = temp
+        temp = self.sizeInTiles[0]
+        self.sizeInTiles[0] = self.sizeInTiles[1]
+        self.sizeInTiles[1] = temp
+        # rotate array clockwise
+        newArray = []
+        for row in range(len(self.array[0])):
+            rowArray = []
+            for col in range(len(self.array)):
+                rowArray.append("x")
+            newArray.append(rowArray)
+        row = 0
+        col = 0
+
+        for i in reversed(range(len(self.array[0]))):
+            for j in range(len(self.array)):
+                newArray[row][col] = self.array[j][i]
+                col += 1
+            row += 1
+            col = 0
+        self.array = newArray
+        # set symmetry
+        temp = self.symmetryX
+        self.symmetryX = self.symmetryY
+        self.symmetryY = temp
 
     def printArray(self):
         for row in self.array:
@@ -74,7 +160,7 @@ class Piece:
     def getLong5(tileOffset, tileSize, color):
         width = tileOffset * 5 - (tileOffset - tileSize)
         height = tileOffset - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height, [1, 5], 5)
+        piece = Piece(0, 0, color, width, height, [1, 5], 5, True, True)
         piece.array = [
             ["y", "n", "n", "n", "n", "n", "y"],
             ["n", "p", "p", "p", "p", "p", "n"],
@@ -107,7 +193,7 @@ class Piece:
     def getLong4(tileOffset, tileSize, color):
         width = tileOffset * 4 - (tileOffset - tileSize)
         height = tileOffset - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height, [1, 4], 4)
+        piece = Piece(0, 0, color, width, height, [1, 4], 4, True, True)
         piece.array = [
             ["y", "n", "n", "n", "n", "y"],
             ["n", "p", "p", "p", "p", "n"],
@@ -135,7 +221,7 @@ class Piece:
     def getLong3(tileOffset, tileSize, color):
         width = tileOffset * 3 - (tileOffset - tileSize)
         height = tileOffset - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height, [1, 3], 3)
+        piece = Piece(0, 0, color, width, height, [1, 3], 3, True, True)
         piece.array = [
             ["y", "n", "n", "n", "y"],
             ["n", "p", "p", "p", "n"],
@@ -156,7 +242,7 @@ class Piece:
     def getLong2(tileOffset, tileSize, color):
         width = tileOffset * 2 - (tileOffset - tileSize)
         height = tileOffset - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height, [1, 2], 2)
+        piece = Piece(0, 0, color, width, height, [1, 2], 2, True, True)
         piece.array = [
             ["y", "n", "n", "y"],
             ["n", "p", "p", "n"],
@@ -171,7 +257,7 @@ class Piece:
     def getDot(tileOffset, tileSize, color):
         width = tileOffset - (tileOffset - tileSize)
         height = tileOffset - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height, [1, 1], 1)
+        piece = Piece(0, 0, color, width, height, [1, 1], 1, True, True)
         piece.array = [
             ["y", "n", "y"],
             ["n", "p", "n"],
@@ -186,7 +272,7 @@ class Piece:
     def getL4(tileOffset, tileSize, color):
         width = tileOffset * 4 - (tileOffset - tileSize)
         height = tileOffset * 2 - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height, [2, 4], 5)
+        piece = Piece(0, 0, color, width, height, [2, 4], 5, False, False)
         piece.array = [
             [" ", " ", " ", "y", "n", "y"],
             ["y", "n", "n", "n", "p", "n"],
@@ -226,7 +312,7 @@ class Piece:
     def getL3(tileOffset, tileSize, color):
         width = tileOffset * 3 - (tileOffset - tileSize)
         height = tileOffset * 2 - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height, [2, 3], 4)
+        piece = Piece(0, 0, color, width, height, [2, 3], 4, False, False)
         piece.array = [
             [" ", " ", "y", "n", "y"],
             ["y", "n", "n", "p", "n"],
@@ -253,7 +339,7 @@ class Piece:
     def getL2(tileOffset, tileSize, color):
         width = tileOffset * 2 - (tileOffset - tileSize)
         height = tileOffset * 2 - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height, [2, 2], 3)
+        piece = Piece(0, 0, color, width, height, [2, 2], 3, False, False)
         piece.array = [
             [" ", "y", "n", "y"],
             ["y", "n", "p", "n"],
@@ -277,7 +363,7 @@ class Piece:
     def getL33(tileOffset, tileSize, color):
         width = tileOffset * 3 - (tileOffset - tileSize)
         height = tileOffset * 3 - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height, [3, 3], 5)
+        piece = Piece(0, 0, color, width, height, [3, 3], 5, False, False)
         piece.array = [
             [" ", " ", "y", "n", "y"],
             [" ", " ", "n", "p", "n"],
@@ -318,7 +404,7 @@ class Piece:
     def getPlus(tileOffset, tileSize, color):
         width = tileOffset * 3 - (tileOffset - tileSize)
         height = tileOffset * 3 - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height, [3, 3], 5)
+        piece = Piece(0, 0, color, width, height, [3, 3], 5, True, True)
         piece.array = [
             [" ", "y", "n", "y", " "],
             ["y", "n", "p", "n", "y"],
@@ -354,7 +440,7 @@ class Piece:
     def getHat(tileOffset, tileSize, color):
         width = tileOffset * 3 - (tileOffset - tileSize)
         height = tileOffset * 2 - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height, [2, 3], 5)
+        piece = Piece(0, 0, color, width, height, [2, 3], 5, True, False)
         piece.array = [
             ["y", "n", "n", "n", "y"],
             ["n", "p", "p", "p", "n"],
@@ -385,7 +471,7 @@ class Piece:
     def getSquare(tileOffset, tileSize, color):
         width = tileOffset * 2 - (tileOffset - tileSize)
         height = tileOffset * 2 - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height, [2, 2], 4)
+        piece = Piece(0, 0, color, width, height, [2, 2], 4, True, True)
         piece.array = [
             ["y", "n", "n", "y"],
             ["n", "p", "p", "n"],
@@ -410,7 +496,7 @@ class Piece:
     def getF(tileOffset, tileSize, color):
         width = tileOffset * 4 - (tileOffset - tileSize)
         height = tileOffset * 2 - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height, [2, 4], 5)
+        piece = Piece(0, 0, color, width, height, [2, 4], 5, False, False)
         piece.array = [
             ["y", "n", "n", "n", "n", "y"],
             ["n", "p", "p", "p", "p", "n"],
@@ -442,7 +528,7 @@ class Piece:
     def getZ(tileOffset, tileSize, color):
         width = tileOffset * 3 - (tileOffset - tileSize)
         height = tileOffset * 3 - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height, [3, 3], 5)
+        piece = Piece(0, 0, color, width, height, [3, 3], 5, False, False)
         piece.array = [
             [" ", " ", "y", "n", "y"],
             ["y", "n", "n", "p", "n"],
@@ -478,7 +564,7 @@ class Piece:
     def getStair(tileOffset, tileSize, color):
         width = tileOffset * 3 - (tileOffset - tileSize)
         height = tileOffset * 3 - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height, [3, 3], 5)
+        piece = Piece(0, 0, color, width, height, [3, 3], 5, False, False)
         piece.array = [
             [" ", " ", "y", "n", "y"],
             [" ", "y", "n", "p", "y"],
@@ -529,7 +615,7 @@ class Piece:
     def getT(tileOffset, tileSize, color):
         width = tileOffset * 3 - (tileOffset - tileSize)
         height = tileOffset * 3 - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height, [3, 3], 5)
+        piece = Piece(0, 0, color, width, height, [3, 3], 5, False, True)
         piece.array = [
             ["y", "n", "y", " ", " "],
             ["n", "p", "n", "n", "y"],
@@ -562,7 +648,7 @@ class Piece:
     def getP(tileOffset, tileSize, color):
         width = tileOffset * 3 - (tileOffset - tileSize)
         height = tileOffset * 2 - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height, [2, 3], 5)
+        piece = Piece(0, 0, color, width, height, [2, 3], 5, False, False)
         piece.array = [
             ["y", "n", "n", "y", " "],
             ["n", "p", "p", "n", "y"],
@@ -591,7 +677,7 @@ class Piece:
     def getSquiggle(tileOffset, tileSize, color):
         width = tileOffset * 3 - (tileOffset - tileSize)
         height = tileOffset * 2 - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height, [2, 3], 4)
+        piece = Piece(0, 0, color, width, height, [2, 3], 4, False, False)
         piece.array = [
             [" ", "y", "n", "n", "y"],
             ["y", "n", "p", "p", "n"],
@@ -634,7 +720,7 @@ class Piece:
     def getWeird(tileOffset, tileSize, color):
         width = tileOffset * 3 - (tileOffset - tileSize)
         height = tileOffset * 3 - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height, [3, 3], 5)
+        piece = Piece(0, 0, color, width, height, [3, 3], 5, False, False)
         piece.array = [
             ["y", "n", "n", "y", " "],
             ["n", "p", "p", "n", "y"],
@@ -670,7 +756,7 @@ class Piece:
     def getWeird2(tileOffset, tileSize, color):
         width = tileOffset * 3 - (tileOffset - tileSize)
         height = tileOffset * 2 - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height, [2, 3], 4)
+        piece = Piece(0, 0, color, width, height, [2, 3], 4, True, False)
         piece.array = [
             [" ", "y", "n", "y", " "],
             ["y", "n", "p", "n", "y"],
@@ -692,7 +778,7 @@ class Piece:
     def getBolt(tileOffset, tileSize, color):
         width = tileOffset * 4 - (tileOffset - tileSize)
         height = tileOffset * 2 - (tileOffset - tileSize)
-        piece = Piece(0, 0, color, width, height, [2, 4], 5)
+        piece = Piece(0, 0, color, width, height, [2, 4], 5, False, False)
         piece.array = [
             ["y", "n", "n", "n", "y", " "],
             ["n", "p", "p", "p", "n", "y"],
@@ -804,3 +890,19 @@ class Piece:
     @numTiles.setter
     def numTiles(self, value):
         self.__numTiles = value
+
+    @property
+    def symmetryX(self):
+        return self.__symmetryX
+
+    @symmetryX.setter
+    def symmetryX(self, value):
+        self.__symmetryX = value
+
+    @property
+    def symmetryY(self):
+        return self.__symmetryY
+
+    @symmetryY.setter
+    def symmetryY(self, value):
+        self.__symmetryY = value

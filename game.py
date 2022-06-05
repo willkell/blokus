@@ -163,9 +163,19 @@ class Game:
                             self.tileOffset,
                         )
 
-                if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
-                    if currPiece:
-                        Piece.rotate(currPiece)
+                if event.type == pg.KEYDOWN:
+                    if event.key == pg.K_RIGHT or event.key == pg.K_f:
+                        if currPiece:
+                            Piece.rotateCCW(currPiece)
+                    if event.key == pg.K_LEFT or event.key == pg.K_a:
+                        if currPiece:
+                            Piece.rotateCW(currPiece)
+                    if event.key == pg.K_UP or event.key == pg.K_d:
+                        if currPiece and not currPiece.symmetryX:
+                            Piece.flipOverX(currPiece)
+                    if event.key == pg.K_DOWN or event.key == pg.K_s:
+                        if currPiece and not currPiece.symmetryY:
+                            Piece.flipOverY(currPiece)
 
             mouse_rel = pg.mouse.get_rel()
             if canDrag:
