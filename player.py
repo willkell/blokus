@@ -9,6 +9,7 @@ class Player:
         self.score = 0
         self.pieces = []
         self.color = (0, 0, 0)
+        self.placements = {}
 
     def initInventory(self, inventoryStartX, inventoryStartY, tileOffset):
         placeX = inventoryStartX
@@ -85,3 +86,11 @@ class Player:
     @score.setter
     def score(self, score):
         self._score = score
+
+    @property
+    def placements(self):
+        return self._placements
+
+    @placements.setter
+    def placements(self, placements):
+        self._placements = placements
