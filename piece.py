@@ -1,3 +1,5 @@
+import copy
+
 import pygame as pg
 
 
@@ -26,11 +28,22 @@ class Piece:
         self.numTiles = numTiles
         self.symmetryX = symmetryX
         self.symmetryY = symmetryY
-        for row in range(sizeInTiles[1] + 2):
+        for _ in range(sizeInTiles[1] + 2):
             rowArray = []
-            for col in range(sizeInTiles[0] + 2):
+            for _ in range(sizeInTiles[0] + 2):
                 rowArray.append("x")
             self.array.append(rowArray)
+
+    def __deepcopy__(self, memo):
+        cls = self.__class__
+        result = cls.__new__(cls)
+        memo[id(self)] = result
+        for k, v in self.__dict__.items():
+            if hasattr(v, "copy") and callable(getattr(v, "copy")):
+                setattr(result, k, v.copy())
+            else:
+                setattr(result, k, copy.deepcopy(v, memo))
+        return result
 
     def drag(self, mouse_rel):
         self.x += mouse_rel[0]

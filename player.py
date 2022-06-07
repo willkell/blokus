@@ -66,10 +66,22 @@ class Player:
         return False, None
 
     def hasPlayed(self):
-        return len(self.pieces) == 21
+        return len(self.pieces) != 21
 
     def removePiece(self, piece):
         self.pieces.remove(piece)
+
+    def removeAllPiece(self, piece):
+        for _ in range(4):
+            for inv in self.pieces:
+                if piece.array == inv.array:
+                    self.pieces.remove(inv)
+                    break
+            for inv in self.placements:
+                for inv2 in self.placements[inv]:
+                    if piece.array == inv2.array:
+                        self.placements[inv].remove(inv2)
+            piece.rotateCW()
 
     @property
     def color(self):
