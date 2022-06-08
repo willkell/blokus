@@ -78,16 +78,19 @@ class Game:
             self.player2, self.tileOffset, self.tileSize, self.player2.color
         )
         Player.initInventory(
-            self.player3, self.inventoryStartX, self.inventoryStartY, self.tileOffset
+            self.player2, self.inventoryStartX, self.inventoryStartY, self.tileOffset
         )
         Player.initPieces(
             self.player3, self.tileOffset, self.tileSize, self.player3.color
         )
         Player.initInventory(
-            self.player4, self.inventoryStartX, self.inventoryStartY, self.tileOffset
+            self.player3, self.inventoryStartX, self.inventoryStartY, self.tileOffset
         )
         Player.initPieces(
             self.player4, self.tileOffset, self.tileSize, self.player4.color
+        )
+        Player.initInventory(
+            self.player4, self.inventoryStartX, self.inventoryStartY, self.tileOffset
         )
         currentPlayer = self.player1
         canDrag = False
@@ -95,6 +98,12 @@ class Game:
         currPiece = None
         self.player1.placements[(0, 0)] = []
         self.initialPlacement(self.player1, 0, 0, screen)
+        self.player2.placements[(0, 19)] = []
+        self.initialPlacement(self.player2, 0, 19, screen)
+        self.player3.placements[(19, 19)] = []
+        self.initialPlacement(self.player3, 19, 19, screen)
+        self.player4.placements[(19, 0)] = []
+        self.initialPlacement(self.player4, 19, 0, screen)
 
         while is_running:
             for event in pg.event.get():
@@ -142,11 +151,12 @@ class Game:
                 if event.type == pg.KEYDOWN and event.key == pg.K_RETURN:
                     if dropped and (
                         self.checkValidity(currentPlayer, currPiece)
-                        if Player.hasPlayed(currentPlayer)
+                        if currentPlayer.played
                         else self.checkValidityTurn1(currentPlayer, currPiece)
                     ):
+                        currentPlayer.played = True
                         currentPlayer.pieces.append(currPiece)
-                        self.updatePlacements(currentPlayer)
+                        self.updatePlacements()
                         self.commitToBoard(currentPlayer, currPiece, screen)
                         currentPlayer.score += currPiece.numTiles
                         Player.removeAllPiece(currentPlayer, currPiece)
@@ -158,7 +168,7 @@ class Game:
                             self.inventoryStartY,
                             self.tileOffset,
                         )
-                        # currentPlayer = self.getNextPlayer(currentPlayer)
+                        currentPlayer = self.getNextPlayer(currentPlayer)
                         Player.initInventory(
                             currentPlayer,
                             self.inventoryStartX,
@@ -187,13 +197,21 @@ class Game:
                         if currPiece and not currPiece.symmetryY:
                             Piece.flipOverY(currPiece)
                     if event.key == pg.K_SPACE:
+                        currentPlayer.played = True
                         placement = random.choice(list(currentPlayer.placements.keys()))
                         piece = random.choice(currentPlayer.placements[placement])
+                        currentPlayer.placements.pop(placement)
                         currentPlayer.pieces.append(piece)
-                        self.updatePlacements(currentPlayer)
-                        self.commitToBoard(currentPlayer, piece, screen)
                         currentPlayer.score += piece.numTiles
-                        Player.removeAllPiece(currentPlayer, piece)
+                        self.commitToBoard(currentPlayer, piece, screen)
+                        self.updatePlacements()
+                        Player.initInventory(
+                            currentPlayer,
+                            self.inventoryStartX,
+                            self.inventoryStartY,
+                            self.tileOffset,
+                        )
+                        currentPlayer = self.getNextPlayer(currentPlayer)
                         Player.initInventory(
                             currentPlayer,
                             self.inventoryStartX,
@@ -397,8 +415,7 @@ class Game:
             piece.image, (piece.x - self.boardStartX, piece.y - self.boardStartY)
         )
         self.board = newBoard
-        Player.removePiece(player, piece)
-
+        Player.removeAllPiece(player, piece)
         # merge piece image to board array
         rowTileArrStart = round(
             ((piece.y - self.boardStartY - self.borderSize) / self.tileOffset) - 1
@@ -412,7 +429,14 @@ class Game:
             for tile in row:
                 if tile == "p" and self.tileWithinBoard(rowTile, colTile):
                     self.boardArray[rowTile][colTile] = player.color
-                elif (
+                colTile += 1
+            rowTile += 1
+            colTile = colTileArrStart
+        rowTile = rowTileArrStart
+        colTile = colTileArrStart
+        for row in piece.array:
+            for tile in row:
+                if (
                     tile == "y"
                     and self.tileWithinBoard(rowTile, colTile)
                     and self.boardArray[rowTile][colTile] == self.tileColor
@@ -447,12 +471,13 @@ class Game:
                         # screen.blit(self.board, (self.boardStartX, self.boardStartY))
                         # Player.printPieces(player, screen)
                         # pg.display.flip()
+                        # time.sleep(0.05)
                         if (
                             self.pieceWithinBoard(piece)
                             and piece.array[initialTile[0]][initialTile[1]] == "p"
                             and (
                                 self.checkValidity(player, piece)
-                                if Player.hasPlayed(player)
+                                if player.played
                                 else self.checkValidityTurn1(player, piece)
                             )
                         ):
@@ -469,13 +494,19 @@ class Game:
             piece.x = putBackX
             piece.y = putBackY
 
-    def updatePlacements(self, player):
+    def updatePlacements(self):
         emptyPlacements = []
-        for placement in player.placements:
-            for piece in reversed(player.placements[placement]):
-                if not self.checkValidity(player, piece):
-                    player.placements[placement].remove(piece)
-            if len(player.placements[placement]) == 0:
-                emptyPlacements.append(placement)
-        for p in emptyPlacements:
-            player.placements.pop(p)
+        player = self.player1
+        for _ in range(4):
+            emptyPlacements = []
+            for placement in player.placements:
+                for piece in reversed(player.placements[placement]):
+                    if not (self.checkValidity(player, piece)
+                            if player.played
+                            else self.checkValidityTurn1(player, piece)):
+                        player.placements[placement].remove(piece)
+                if len(player.placements[placement]) == 0:
+                    emptyPlacements.append(placement)
+            for p in emptyPlacements:
+                player.placements.pop(p)
+            player = self.getNextPlayer(player)

@@ -7,6 +7,7 @@ class Player:
     def __init__(self, playerNum):
         self.playerNum = playerNum
         self.score = 0
+        self.played = False
         self.pieces = []
         self.color = (0, 0, 0)
         self.placements = {}
@@ -65,9 +66,6 @@ class Player:
                 return True, piece
         return False, None
 
-    def hasPlayed(self):
-        return len(self.pieces) != 21
-
     def removePiece(self, piece):
         self.pieces.remove(piece)
 
@@ -106,3 +104,11 @@ class Player:
     @placements.setter
     def placements(self, placements):
         self._placements = placements
+
+    @property
+    def played(self):
+        return self._played
+
+    @played.setter
+    def played(self, played):
+        self._played = played

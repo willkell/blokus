@@ -580,7 +580,7 @@ class Piece:
         piece = Piece(0, 0, color, width, height, [3, 3], 5, False, False)
         piece.array = [
             [" ", " ", "y", "n", "y"],
-            [" ", "y", "n", "p", "y"],
+            [" ", "y", "n", "p", "n"],
             ["y", "n", "p", "p", "n"],
             ["n", "p", "p", "n", "y"],
             ["y", "n", "n", "y", " "],
