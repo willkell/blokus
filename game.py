@@ -14,10 +14,10 @@ from player import Player
 
 class Game:
     def __init__(self):
-        self.player1 = Player(1)
-        self.player2 = Player(2)
-        self.player3 = Player(3)
-        self.player4 = Player(4)
+        self.player1 = Player(1, "Human")
+        self.player2 = Player(2, "AI")
+        self.player3 = Player(3, "AI")
+        self.player4 = Player(4, "AI")
         self.screenHeight = 0
         self.screenWidth = 0
         self.boardSize = 0
@@ -53,6 +53,32 @@ class Game:
             self.player3: [-2, -2],
             self.player4: [-2, 1],
         }
+
+    def getRandomMove(self, currentPlayer, screen):
+        currentPlayer.played = True
+        placement = random.choice(list(currentPlayer.placements.keys()))
+        piece = random.choice(currentPlayer.placements[placement])
+        currentPlayer.placements.pop(placement)
+        currentPlayer.pieces.append(piece)
+        currentPlayer.score += piece.numTiles
+        self.commitToBoard(currentPlayer, piece, screen)
+        self.updatePlacements()
+        Player.initInventory(
+            currentPlayer,
+            self.inventoryStartX,
+            self.inventoryStartY,
+            self.tileOffset,
+        )
+        if len(currentPlayer.placements) == 0:
+            currentPlayer.out = True
+        currentPlayer = self.getNextPlayer(currentPlayer)
+        Player.initInventory(
+            currentPlayer,
+            self.inventoryStartX,
+            self.inventoryStartY,
+            self.tileOffset,
+        )
+        return currentPlayer
 
     def run(self):
         pg.init()
@@ -106,6 +132,8 @@ class Game:
         self.initialPlacement(self.player4, 19, 0, screen)
 
         while is_running:
+            # if currentPlayer.out:
+            #     self.getNextPlayer(currentPlayer)
             for event in pg.event.get():
                 if event.type == pg.QUIT or (
                     event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE
@@ -168,6 +196,8 @@ class Game:
                             self.inventoryStartY,
                             self.tileOffset,
                         )
+                        if len(currentPlayer.placements) == 0:
+                            currentPlayer.out = True
                         currentPlayer = self.getNextPlayer(currentPlayer)
                         Player.initInventory(
                             currentPlayer,
@@ -197,34 +227,10 @@ class Game:
                         if currPiece and not currPiece.symmetryY:
                             Piece.flipOverY(currPiece)
                     if event.key == pg.K_SPACE:
-                        currentPlayer.played = True
-                        placement = random.choice(list(currentPlayer.placements.keys()))
-                        piece = random.choice(currentPlayer.placements[placement])
-                        currentPlayer.placements.pop(placement)
-                        currentPlayer.pieces.append(piece)
-                        currentPlayer.score += piece.numTiles
-                        self.commitToBoard(currentPlayer, piece, screen)
-                        self.updatePlacements()
-                        Player.initInventory(
-                            currentPlayer,
-                            self.inventoryStartX,
-                            self.inventoryStartY,
-                            self.tileOffset,
-                        )
-                        currentPlayer = self.getNextPlayer(currentPlayer)
-                        Player.initInventory(
-                            currentPlayer,
-                            self.inventoryStartX,
-                            self.inventoryStartY,
-                            self.tileOffset,
-                        )
-                    # if event.key == pg.K_SPACE:
-                    #     self.initialPlacement(
-                    #         currentPlayer,
-                    #         currentPlayer.placements[0][0],
-                    #         currentPlayer.placements[0][1],
-                    #     )
+                        currentPlayer = self.getRandomMove(currentPlayer, screen)
 
+            if currentPlayer.playerType == "AI":
+                currentPlayer = self.getRandomMove(currentPlayer, screen)
             mouse_rel = pg.mouse.get_rel()
             if canDrag:
                 Piece.drag(currPiece, mouse_rel)
@@ -491,6 +497,7 @@ class Game:
                     initialTile[0] += 1
                     initialTile[1] = 1
                 piece.rotateCW()
+                piece.flipOverX()
             piece.x = putBackX
             piece.y = putBackY
 
@@ -501,12 +508,17 @@ class Game:
             emptyPlacements = []
             for placement in player.placements:
                 for piece in reversed(player.placements[placement]):
-                    if not (self.checkValidity(player, piece)
-                            if player.played
-                            else self.checkValidityTurn1(player, piece)):
+                    if not (
+                        self.checkValidity(player, piece)
+                        if player.played
+                        else self.checkValidityTurn1(player, piece)
+                    ):
                         player.placements[placement].remove(piece)
                 if len(player.placements[placement]) == 0:
                     emptyPlacements.append(placement)
             for p in emptyPlacements:
                 player.placements.pop(p)
             player = self.getNextPlayer(player)
+
+    def offloadPlayer(self, player):
+        self.nextPlayer[player] = self.nextPlayer[player]

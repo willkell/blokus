@@ -4,10 +4,12 @@ from piece import Piece
 
 
 class Player:
-    def __init__(self, playerNum):
+    def __init__(self, playerNum, playerType):
         self.playerNum = playerNum
+        self.playerType = playerType
         self.score = 0
         self.played = False
+        self.out = False
         self.pieces = []
         self.color = (0, 0, 0)
         self.placements = {}
@@ -112,3 +114,19 @@ class Player:
     @played.setter
     def played(self, played):
         self._played = played
+
+    @property
+    def playerType(self):
+        return self._playerType
+
+    @playerType.setter
+    def playerType(self, playerType):
+        self._playerType = playerType
+
+    @property
+    def out(self):
+        return self._out
+
+    @out.setter
+    def out(self, out):
+        self._out = out
