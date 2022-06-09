@@ -14,7 +14,7 @@ from player import Player
 
 class Game:
     def __init__(self):
-        self.player1 = Player(1, "Human")
+        self.player1 = Player(1, "AI")
         self.player2 = Player(2, "AI")
         self.player3 = Player(3, "AI")
         self.player4 = Player(4, "AI")
@@ -69,8 +69,6 @@ class Game:
             self.inventoryStartY,
             self.tileOffset,
         )
-        if len(currentPlayer.placements) == 0:
-            currentPlayer.out = True
         currentPlayer = self.getNextPlayer(currentPlayer)
         Player.initInventory(
             currentPlayer,
@@ -122,6 +120,7 @@ class Game:
         canDrag = False
         dropped = False
         currPiece = None
+        outCounter = 0
         self.player1.placements[(0, 0)] = []
         self.initialPlacement(self.player1, 0, 0, screen)
         self.player2.placements[(0, 19)] = []
@@ -132,8 +131,6 @@ class Game:
         self.initialPlacement(self.player4, 19, 0, screen)
 
         while is_running:
-            # if currentPlayer.out:
-            #     self.getNextPlayer(currentPlayer)
             for event in pg.event.get():
                 if event.type == pg.QUIT or (
                     event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE
@@ -205,6 +202,7 @@ class Game:
                             self.inventoryStartY,
                             self.tileOffset,
                         )
+                        self.updatePlacements()
                     else:
                         Player.initInventory(
                             currentPlayer,
@@ -229,8 +227,40 @@ class Game:
                     if event.key == pg.K_SPACE:
                         currentPlayer = self.getRandomMove(currentPlayer, screen)
 
-            if currentPlayer.playerType == "AI":
-                currentPlayer = self.getRandomMove(currentPlayer, screen)
+            if not currentPlayer.placements and not currentPlayer.out:
+                currentPlayer.out = True
+                outCounter += 1
+
+            if currentPlayer.out:
+                self.getNextPlayer(currentPlayer)
+            if outCounter == 4:
+                is_running = False
+                print("Game over")
+                print("Player 1:", self.player1.score)
+                print("Player 2:", self.player2.score)
+                print("Player 3:", self.player3.score)
+                print("Player 4:", self.player4.score)
+                maxScore = max(
+                    self.player1.score,
+                    self.player2.score,
+                    self.player3.score,
+                    self.player4.score,
+                )
+                if self.player1.score == maxScore:
+                    print("Player 1 wins", end="")
+                elif self.player2.score == maxScore:
+                    print("Player 2 wins", end="")
+                elif self.player3.score == maxScore:
+                    print("Player 3 wins", end="")
+                elif self.player4.score == maxScore:
+                    print("Player 4 wins", end="")
+                print(" With a score of:", maxScore)
+
+                pg.quit()
+                sys.exit()
+
+            # elif currentPlayer.playerType == "AI":
+            # currentPlayer = self.getRandomMove(currentPlayer, screen)
             mouse_rel = pg.mouse.get_rel()
             if canDrag:
                 Piece.drag(currPiece, mouse_rel)
