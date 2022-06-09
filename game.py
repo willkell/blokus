@@ -79,6 +79,7 @@ class Game:
         return currentPlayer
 
     def run(self):
+        startTime = time.time()
         pg.init()
         screen = pg.display.set_mode((0, 0), pg.FULLSCREEN)
         self.set_up_screen(
@@ -231,8 +232,6 @@ class Game:
                 currentPlayer.out = True
                 outCounter += 1
 
-            if currentPlayer.out:
-                self.getNextPlayer(currentPlayer)
             if outCounter == 4:
                 is_running = False
                 print("Game over")
@@ -255,12 +254,15 @@ class Game:
                 elif self.player4.score == maxScore:
                     print("Player 4 wins", end="")
                 print(" With a score of:", maxScore)
+                print("--- %s seconds ---" % (time.time() - startTime))
 
                 pg.quit()
                 sys.exit()
+            if currentPlayer.out:
+                currentPlayer = self.getNextPlayer(currentPlayer)
 
-            # elif currentPlayer.playerType == "AI":
-            # currentPlayer = self.getRandomMove(currentPlayer, screen)
+            elif currentPlayer.playerType == "AI":
+                currentPlayer = self.getRandomMove(currentPlayer, screen)
             mouse_rel = pg.mouse.get_rel()
             if canDrag:
                 Piece.drag(currPiece, mouse_rel)
@@ -497,36 +499,39 @@ class Game:
         for piece in player.pieces:
             putBackX = piece.x
             putBackY = piece.y
-            for _ in range(4):
-                piece.x = initialPieceX
-                piece.y = initialPieceY
-                initialTile = [1, 1]
-                for _ in range(piece.sizeInTiles[0]):
-                    for _ in range(piece.sizeInTiles[1]):
-                        # screen.fill((255, 255, 255))
-                        # screen.blit(self.board, (self.boardStartX, self.boardStartY))
-                        # Player.printPieces(player, screen)
-                        # pg.display.flip()
-                        # time.sleep(0.05)
-                        if (
-                            self.pieceWithinBoard(piece)
-                            and piece.array[initialTile[0]][initialTile[1]] == "p"
-                            and (
-                                self.checkValidity(player, piece)
-                                if player.played
-                                else self.checkValidityTurn1(player, piece)
-                            )
-                        ):
-                            player.placements[(rowTile, colTile)].append(
-                                copy.deepcopy(piece)
-                            )
-                        piece.x -= self.tileOffset
-                        initialTile[1] += 1
-                    piece.y -= self.tileOffset
-                    piece.x = initialPieceX
-                    initialTile[0] += 1
-                    initialTile[1] = 1
-                piece.rotateCW()
+            for _ in range(2):
+                for _ in range(2):
+                    for _ in range(4):
+                        piece.x = initialPieceX
+                        piece.y = initialPieceY
+                        initialTile = [1, 1]
+                        for _ in range(piece.sizeInTiles[0]):
+                            for _ in range(piece.sizeInTiles[1]):
+                                # screen.fill((255, 255, 255))
+                                # screen.blit(self.board, (self.boardStartX, self.boardStartY))
+                                # Player.printPieces(player, screen)
+                                # pg.display.flip()
+                                # time.sleep(0.05)
+                                if (
+                                    self.pieceWithinBoard(piece)
+                                    and piece.array[initialTile[0]][initialTile[1]] == "p"
+                                    and (
+                                        self.checkValidity(player, piece)
+                                        if player.played
+                                        else self.checkValidityTurn1(player, piece)
+                                    )
+                                ):
+                                    player.placements[(rowTile, colTile)].append(
+                                        copy.deepcopy(piece)
+                                    )
+                                piece.x -= self.tileOffset
+                                initialTile[1] += 1
+                            piece.y -= self.tileOffset
+                            piece.x = initialPieceX
+                            initialTile[0] += 1
+                            initialTile[1] = 1
+                        piece.rotateCW()
+                    piece.flipOverY()
                 piece.flipOverX()
             piece.x = putBackX
             piece.y = putBackY
