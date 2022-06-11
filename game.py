@@ -33,7 +33,7 @@ class Game:
         self.boardArray = []
         for row in range(20):
             self.boardArray.append([])
-            for col in range(20):
+            for _ in range(20):
                 self.boardArray[row].append(self.tileColor)
         self.nextPlayer = {
             self.player1: self.player2,
@@ -47,12 +47,6 @@ class Game:
             self.player3: [19, 19],
             self.player4: [19, 0],
         }
-        self.importantTile = {
-            self.player1: [1, 1],
-            self.player2: [1, -2],
-            self.player3: [-2, -2],
-            self.player4: [-2, 1],
-        }
 
     def getRandomMove(self, currentPlayer, screen):
         currentPlayer.played = True
@@ -62,13 +56,7 @@ class Game:
         currentPlayer.pieces.append(piece)
         currentPlayer.score += piece.numTiles
         self.commitToBoard(currentPlayer, piece, screen)
-        self.updatePlacements()
-        Player.initInventory(
-            currentPlayer,
-            self.inventoryStartX,
-            self.inventoryStartY,
-            self.tileOffset,
-        )
+        self.updatePlacements(piece, placement)
         currentPlayer = self.getNextPlayer(currentPlayer)
         Player.initInventory(
             currentPlayer,
@@ -76,6 +64,7 @@ class Game:
             self.inventoryStartY,
             self.tileOffset,
         )
+        # time.sleep(0.9)
         return currentPlayer
 
     def run(self):
@@ -188,14 +177,6 @@ class Game:
                         Player.removeAllPiece(currentPlayer, currPiece)
                         dropped = False
                         currPiece = None
-                        Player.initInventory(
-                            currentPlayer,
-                            self.inventoryStartX,
-                            self.inventoryStartY,
-                            self.tileOffset,
-                        )
-                        if len(currentPlayer.placements) == 0:
-                            currentPlayer.out = True
                         currentPlayer = self.getNextPlayer(currentPlayer)
                         Player.initInventory(
                             currentPlayer,
@@ -203,7 +184,6 @@ class Game:
                             self.inventoryStartY,
                             self.tileOffset,
                         )
-                        self.updatePlacements()
                     else:
                         Player.initInventory(
                             currentPlayer,
@@ -233,6 +213,7 @@ class Game:
                 outCounter += 1
 
             if outCounter == 4:
+                # time.sleep(10)
                 is_running = False
                 print("Game over")
                 print("Player 1:", self.player1.score)
@@ -270,7 +251,7 @@ class Game:
             screen.blit(self.board, (self.boardStartX, self.boardStartY))
             Player.printPieces(currentPlayer, screen)
             pg.display.flip()
-            clock.tick(60)
+            clock.tick(144)
 
     def draw_board(self):
         board = pg.Surface((self.boardSize, self.boardSize))
@@ -343,7 +324,7 @@ class Game:
         self.snapToGrid(piece)
         return True
 
-    def tileWithinBoard(self, row, col):
+    def tileWithinBoard(self, row: int, col: int) -> bool:
         return 0 <= row < 20 and 0 <= col < 20
 
     def pieceWithinBoard(self, piece):
@@ -358,15 +339,15 @@ class Game:
 
     def isOnSafeCorner(self, player, piece):
         rowTileArrStart = round(
-            ((piece.y - self.boardStartY - self.borderSize) / self.tileOffset) - 1
+            ((piece.y - self.boardStartY - self.borderSize) / self.tileOffset)
         )
         colTileArrStart = round(
-            ((piece.x - self.boardStartX - self.borderSize) / self.tileOffset) - 1
+            ((piece.x - self.boardStartX - self.borderSize) / self.tileOffset)
         )
         rowTile = rowTileArrStart
         colTile = colTileArrStart
-        for row in piece.array:
-            for tile in row:
+        for row in piece.array[1:-1]:
+            for tile in row[1:-1]:
                 if tile == "p":
                     if (
                         rowTile == self.safeCorners[player][0]
@@ -407,9 +388,9 @@ class Game:
         for row in piece.array:
             for tile in row:
                 # print("checking tile at row {}, col {}".format(rowTile, colTile))
-                if tile == "p":
+                if self.tileWithinBoard(rowTile, colTile):
                     if (
-                        self.tileWithinBoard(rowTile, colTile)
+                        tile == "p"
                         and self.boardArray[rowTile][colTile] != self.tileColor
                     ):
                         # print(
@@ -421,23 +402,16 @@ class Game:
                         #     )
                         # )
                         return False
-                elif tile == "n":
-                    if (
-                        self.tileWithinBoard(rowTile, colTile)
-                        and self.boardArray[rowTile][colTile] == player.color
-                    ):
-                        # print(
-                        #     self.validFailureMsg(
-                        #         rowTile, colTile, "not same color", "same color"
-                        #     )
-                        # )
-                        return False
-                elif tile == "y":
-                    if (
-                        self.tileWithinBoard(rowTile, colTile)
-                        and self.boardArray[rowTile][colTile] == player.color
-                    ):
-                        isValid = True
+                    if self.boardArray[rowTile][colTile] == player.color:
+                        if tile == "n":
+                            # print(
+                            #     self.validFailureMsg(
+                            #         rowTile, colTile, "not same color", "same color"
+                            #     )
+                            # )
+                            return False
+                        elif tile == "y":
+                            isValid = True
                 colTile += 1
             rowTile += 1
             colTile = colTileArrStart
@@ -461,15 +435,23 @@ class Game:
         colTileArrStart = round(
             ((piece.x - self.boardStartX - self.borderSize) / self.tileOffset) - 1
         )
-        rowTile = rowTileArrStart
-        colTile = colTileArrStart
-        for row in piece.array:
-            for tile in row:
-                if tile == "p" and self.tileWithinBoard(rowTile, colTile):
+        rowTile = rowTileArrStart + 1
+        colTile = colTileArrStart + 1
+        for row in piece.array[1:-1]:
+            for tile in row[1:-1]:
+                if tile == "p":
                     self.boardArray[rowTile][colTile] = player.color
+                    if (rowTile, colTile) in self.player1.placements:
+                        self.player1.placements.pop((rowTile, colTile))
+                    if (rowTile, colTile) in self.player2.placements:
+                        self.player2.placements.pop((rowTile, colTile))
+                    if (rowTile, colTile) in self.player3.placements:
+                        self.player3.placements.pop((rowTile, colTile))
+                    if (rowTile, colTile) in self.player4.placements:
+                        self.player4.placements.pop((rowTile, colTile))
                 colTile += 1
             rowTile += 1
-            colTile = colTileArrStart
+            colTile = colTileArrStart + 1
         rowTile = rowTileArrStart
         colTile = colTileArrStart
         for row in piece.array:
@@ -485,8 +467,6 @@ class Game:
                 colTile += 1
             rowTile += 1
             colTile = colTileArrStart
-        # check for new placements, add to player placement list
-        # update necessary placements
 
     def getNextPlayer(self, player):
         return self.nextPlayer[player]
@@ -497,8 +477,6 @@ class Game:
         initialTile = [1, 1]
         # pieces = copy.deepcopy(player.pieces)
         for piece in player.pieces:
-            putBackX = piece.x
-            putBackY = piece.y
             for _ in range(2):
                 for _ in range(2):
                     for _ in range(4):
@@ -514,7 +492,8 @@ class Game:
                                 # time.sleep(0.05)
                                 if (
                                     self.pieceWithinBoard(piece)
-                                    and piece.array[initialTile[0]][initialTile[1]] == "p"
+                                    and piece.array[initialTile[0]][initialTile[1]]
+                                    == "p"
                                     and (
                                         self.checkValidity(player, piece)
                                         if player.played
@@ -530,30 +509,40 @@ class Game:
                             piece.x = initialPieceX
                             initialTile[0] += 1
                             initialTile[1] = 1
-                        piece.rotateCW()
-                    piece.flipOverY()
-                piece.flipOverX()
-            piece.x = putBackX
-            piece.y = putBackY
+                        if not piece.symmetryRotate:
+                            piece.rotateCW()
+                        else:
+                            break
+                    if not piece.symmetryY:
+                        piece.flipOverY()
+                    else:
+                        break
+                if not piece.symmetryX:
+                    piece.flipOverX()
+                else:
+                    break
+        Player.initInventory(
+            player, self.inventoryStartX, self.inventoryStartY, self.tileOffset
+        )
 
-    def updatePlacements(self):
+    def updatePlacements(self, piece, place=(10, 10)):
         emptyPlacements = []
         player = self.player1
         for _ in range(4):
             emptyPlacements = []
             for placement in player.placements:
-                for piece in reversed(player.placements[placement]):
-                    if not (
-                        self.checkValidity(player, piece)
-                        if player.played
-                        else self.checkValidityTurn1(player, piece)
-                    ):
-                        player.placements[placement].remove(piece)
+                if abs(placement[0] - (place[0] + piece.sizeInTiles[0]) <= 4) and abs(
+                    placement[1] - (place[1] + piece.sizeInTiles[1]) <= 4
+                ):
+                    for piece in reversed(player.placements[placement]):
+                        if not (
+                            self.checkValidity(player, piece)
+                            if player.played
+                            else self.checkValidityTurn1(player, piece)
+                        ):
+                            player.placements[placement].remove(piece)
                 if len(player.placements[placement]) == 0:
                     emptyPlacements.append(placement)
             for p in emptyPlacements:
                 player.placements.pop(p)
             player = self.getNextPlayer(player)
-
-    def offloadPlayer(self, player):
-        self.nextPlayer[player] = self.nextPlayer[player]
