@@ -30,9 +30,9 @@ class Piece:
         self.symmetryX = symmetryX
         self.symmetryY = symmetryY
         self.symmetryRotate = symmetryRotate
-        for _ in range(sizeInTiles[1] + 2):
+        for _ in range(sizeInTiles[0] + 2):
             rowArray = []
-            for _ in range(sizeInTiles[0] + 2):
+            for _ in range(sizeInTiles[1] + 2):
                 rowArray.append("x")
             self.array.append(rowArray)
 

@@ -51,12 +51,12 @@ class Game:
     def getRandomMove(self, currentPlayer, screen):
         currentPlayer.played = True
         placement = random.choice(list(currentPlayer.placements.keys()))
-        piece = random.choice(currentPlayer.placements[placement])
+        piece = copy.deepcopy(random.choice(currentPlayer.placements[placement]))
         currentPlayer.placements.pop(placement)
         currentPlayer.pieces.append(piece)
         currentPlayer.score += piece.numTiles
         self.commitToBoard(currentPlayer, piece, screen)
-        self.updatePlacements(piece, placement)
+        self.updatePlacements(piece)
         currentPlayer = self.getNextPlayer(currentPlayer)
         Player.initInventory(
             currentPlayer,
@@ -171,7 +171,7 @@ class Game:
                     ):
                         currentPlayer.played = True
                         currentPlayer.pieces.append(currPiece)
-                        self.updatePlacements()
+                        self.updatePlacements(currPiece)
                         self.commitToBoard(currentPlayer, currPiece, screen)
                         currentPlayer.score += currPiece.numTiles
                         Player.removeAllPiece(currentPlayer, currPiece)
@@ -525,24 +525,89 @@ class Game:
             player, self.inventoryStartX, self.inventoryStartY, self.tileOffset
         )
 
-    def updatePlacements(self, piece, place=(10, 10)):
-        emptyPlacements = []
-        player = self.player1
-        for _ in range(4):
+    def updatePlacements(self, piece):
+        pieceRowStart = round(
+            ((piece.y - self.boardStartY - self.borderSize) / self.tileOffset)
+        )
+        pieceColStart = round(
+            ((piece.x - self.boardStartX - self.borderSize) / self.tileOffset)
+        )
+        pieceRowEnd = pieceRowStart + piece.sizeInTiles[0]
+        pieceColEnd = pieceColStart + piece.sizeInTiles[1]
+        # before you are within the piece
+        for row in range(pieceRowStart - 5, pieceRowStart):
+            for col in range(
+                pieceColStart - 5 + (pieceRowStart - row),
+                pieceColEnd + 6 - (pieceRowStart - row),
+            ):
+                if self.tileWithinBoard(row, col):
+                    players = self.whosePlacement(row, col)
+                    for player in players:
+                        self.updatePlacement(
+                            pieceRowStart - row - 2,
+                            abs(col - pieceColStart) - 2,
+                            player,
+                            (row, col),
+                        )
+        # within the piece
+        for row in range(pieceRowStart, pieceRowEnd + 1):
+            for col in range(pieceColStart - 5, pieceColEnd + 6):
+                if self.tileWithinBoard(row, col):
+                    players = self.whosePlacement(row, col)
+                    for player in players:
+                        self.updatePlacement(
+                            1, abs(col - pieceColStart) - 2, player, (row, col)
+                        )
+        # after you are within the piece
+        for row in range(pieceRowEnd + 1, pieceRowEnd + 6):
+            for col in range(
+                pieceColStart - 5 + (row - pieceRowEnd),
+                pieceColEnd + 6 - (row - pieceRowEnd),
+            ):
+                if self.tileWithinBoard(row, col):
+                    players = self.whosePlacement(row, col)
+                    for player in players:
+                        self.updatePlacement(
+                            row - pieceRowStart - 2,
+                            abs(col - pieceColStart) - 2,
+                            player,
+                            (row, col),
+                        )
+
+        self.getRidOfEmptyPlacements()
+
+    def whosePlacement(self, row, col):
+        players = []
+        if (row, col) in self.player1.placements:
+            players.append(self.player1)
+        if (row, col) in self.player2.placements:
+            players.append(self.player2)
+        if (row, col) in self.player3.placements:
+            players.append(self.player3)
+        if (row, col) in self.player4.placements:
+            players.append(self.player4)
+        return players
+
+    def updatePlacement(self, minHeight, minWidth, player, place):
+        for piece in reversed(player.placements[place]):
+            if (
+                piece.sizeInTiles[0] >= minHeight
+                and piece.sizeInTiles[1] >= minWidth
+                and not (
+                    self.checkValidity(player, piece)
+                    if player.played
+                    else self.checkValidityTurn1(player, piece)
+                )
+            ):
+                player.placements[place].remove(piece)
+        # if not player.placements[place]:
+        #     player.placements.pop(place)
+
+    def getRidOfEmptyPlacements(self):
+        for player in [self.player1, self.player2, self.player3, self.player4]:
             emptyPlacements = []
-            for placement in player.placements:
-                if abs(placement[0] - (place[0] + piece.sizeInTiles[0]) <= 4) and abs(
-                    placement[1] - (place[1] + piece.sizeInTiles[1]) <= 4
-                ):
-                    for piece in reversed(player.placements[placement]):
-                        if not (
-                            self.checkValidity(player, piece)
-                            if player.played
-                            else self.checkValidityTurn1(player, piece)
-                        ):
-                            player.placements[placement].remove(piece)
-                if len(player.placements[placement]) == 0:
-                    emptyPlacements.append(placement)
-            for p in emptyPlacements:
-                player.placements.pop(p)
-            player = self.getNextPlayer(player)
+            for place in player.placements:
+                if not player.placements[place]:
+                    emptyPlacements.append(place)
+            for place in emptyPlacements:
+                player.placements.pop(place)
