@@ -498,11 +498,12 @@ class Game:
                         initialTile = [1, 1]
                         for _ in range(piece.sizeInTiles[0]):
                             for _ in range(piece.sizeInTiles[1]):
-                                # screen.fill((255, 255, 255))
-                                # screen.blit(self.board, (self.boardStartX, self.boardStartY))
+                                screen.fill((255, 255, 255))
+                                screen.blit(self.board, (self.boardStartX, self.boardStartY))
                                 # Player.printPieces(player, screen)
-                                # pg.display.flip()
-                                # time.sleep(0.05)
+                                screen.blit(piece.image, (piece.x, piece.y))
+                                pg.display.flip()
+                                time.sleep(0.05)
                                 if (
                                     self.pieceWithinBoard(piece)
                                     and piece.array[initialTile[0]][initialTile[1]]
@@ -545,14 +546,13 @@ class Game:
         # if everythingValid:
         #     player.placements[(rowTile, colTile)] = copy.deepcopy(player.pieces)
         #     return
-        placementType = self.getPlacementType(player, rowTile, colTile)
         pieceDeck = player.deck[placementPos]
         for piece in pieceDeck:
             piece.x, piece.y = self.tilePos(rowTile, colTile)
-            if (placementType == "bottomLeft" or placementType == "topLeft"):
-                piece.x -= self.tileOffset * piece.sizeInTiles[1]
-            if (placementType == "topLeft" or placementType == "topRight"):
-                piece.y -= self.tileOffset * piece.sizeInTiles[0]
+            if (placementPos == "lowerLeft" or placementPos == "upperLeft"):
+                piece.x -= self.tileOffset * (piece.sizeInTiles[1] - 1)
+            if (placementPos == "upperLeft" or placementPos == "upperRight"):
+                piece.y -= self.tileOffset * (piece.sizeInTiles[0] - 1)
 
             if self.pieceWithinBoard(piece) and (
                 self.checkValidity(player, piece)
@@ -560,10 +560,11 @@ class Game:
                 else self.checkValidityTurn1(player, piece)
             ):
                 player.placements[(rowTile, colTile)].append(piece)
-            # screen.fill((255, 255, 255))
-            # screen.blit(self.board, (self.boardStartX, self.boardStartY))
+            screen.fill((255, 255, 255))
+            screen.blit(self.board, (self.boardStartX, self.boardStartY))
             # Player.printPieces(player, screen)
-            # pg.display.flip()
+            screen.blit(piece.image, (piece.x, piece.y))
+            pg.display.flip()
             # time.sleep(0.05)
 
     def updatePlacements(self, piece):
