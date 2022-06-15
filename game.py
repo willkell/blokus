@@ -51,12 +51,13 @@ class Game:
     def getRandomMove(self, currentPlayer, screen):
         currentPlayer.played = True
         placement = random.choice(list(currentPlayer.placements.keys()))
-        piece = copy.deepcopy(random.choice(currentPlayer.placements[placement]))
+        piece = copy.deepcopy(random.choice(currentPlayer.placements[placement].pieces))
         currentPlayer.placements.pop(placement)
         currentPlayer.pieces.append(piece)
         currentPlayer.score += piece.numTiles
         self.commitToBoard(currentPlayer, piece, screen)
         self.updatePlacements(piece)
+        # time.sleep(0.9)
         currentPlayer = self.getNextPlayer(currentPlayer)
         Player.initInventory(
             currentPlayer,
@@ -64,7 +65,6 @@ class Game:
             self.inventoryStartY,
             self.tileOffset,
         )
-        # time.sleep(0.9)
         return currentPlayer
 
     def run(self):
@@ -111,14 +111,18 @@ class Game:
         dropped = False
         currPiece = None
         outCounter = 0
-        self.player1.placements[(0, 0)] = []
-        self.initialPlacement(self.player1, 0, 0, screen)
-        self.player2.placements[(0, 19)] = []
-        self.initialPlacement(self.player2, 0, 19, screen)
-        self.player3.placements[(19, 19)] = []
-        self.initialPlacement(self.player3, 19, 19, screen)
-        self.player4.placements[(19, 0)] = []
-        self.initialPlacement(self.player4, 19, 0, screen)
+        self.setUpPieceDeck(self.player1, screen)
+        self.player1.placements[(0, 0)] = Player.Placement("lowerRight")
+        self.initialPlacement(self.player1, 0, 0, screen, "lowerRight")
+        self.setUpPieceDeck(self.player2, screen)
+        self.player2.placements[(0, 19)] = Player.Placement("lowerLeft")
+        self.initialPlacement(self.player2, 0, 19, screen, "lowerLeft")
+        self.setUpPieceDeck(self.player3, screen)
+        self.player3.placements[(19, 19)] = Player.Placement("upperLeft")
+        self.initialPlacement(self.player3, 19, 19, screen, "upperLeft")
+        self.setUpPieceDeck(self.player4, screen)
+        self.player4.placements[(19, 0)] = Player.Placement("upperRight")
+        self.initialPlacement(self.player4, 19, 0, screen, "upperRight")
 
         while is_running:
             for event in pg.event.get():
@@ -462,8 +466,16 @@ class Game:
                     and self.boardArray[rowTile][colTile] == self.tileColor
                     and not ((rowTile, colTile) in player.placements)
                 ):
-                    player.placements[(rowTile, colTile)] = []
-                    self.initialPlacement(player, rowTile, colTile, screen)
+                    player.placements[(rowTile, colTile)] = Player.Placement(
+                        self.getPlacementType(player, rowTile, colTile)
+                    )
+                    self.initialPlacement(
+                        player,
+                        rowTile,
+                        colTile,
+                        screen,
+                        self.getPlacementType(player, rowTile, colTile),
+                    )
                 colTile += 1
             rowTile += 1
             colTile = colTileArrStart
@@ -471,7 +483,8 @@ class Game:
     def getNextPlayer(self, player):
         return self.nextPlayer[player]
 
-    def initialPlacement(self, player, rowTile, colTile, screen):
+    def getPieceDeck(self, player, rowTile, colTile, screen):
+        pieceDeck = []
         initialPieceX = self.boardStartX + self.borderSize + colTile * self.tileOffset
         initialPieceY = self.boardStartY + self.borderSize + rowTile * self.tileOffset
         initialTile = [1, 1]
@@ -494,36 +507,64 @@ class Game:
                                     self.pieceWithinBoard(piece)
                                     and piece.array[initialTile[0]][initialTile[1]]
                                     == "p"
-                                    and (
-                                        self.checkValidity(player, piece)
-                                        if player.played
-                                        else self.checkValidityTurn1(player, piece)
-                                    )
+                                    and self.checkValidity(player, piece)
                                 ):
-                                    player.placements[(rowTile, colTile)].append(
-                                        copy.deepcopy(piece)
-                                    )
+                                    pieceDeck.append(copy.deepcopy(piece))
                                 piece.x -= self.tileOffset
                                 initialTile[1] += 1
                             piece.y -= self.tileOffset
                             piece.x = initialPieceX
                             initialTile[0] += 1
                             initialTile[1] = 1
-                        if not piece.symmetryRotate:
-                            piece.rotateCW()
-                        else:
+                        if piece.symmetryRotate:
                             break
-                    if not piece.symmetryY:
-                        piece.flipOverY()
-                    else:
+                        piece.rotateCW()
+                    if piece.symmetryY:
                         break
-                if not piece.symmetryX:
-                    piece.flipOverX()
-                else:
+                    piece.flipOverY()
+                if piece.symmetryX:
                     break
-        Player.initInventory(
-            player, self.inventoryStartX, self.inventoryStartY, self.tileOffset
-        )
+                piece.flipOverX()
+        return pieceDeck
+
+    def initialPlacement(
+        self,
+        player,
+        rowTile,
+        colTile,
+        screen,
+        placementPos,
+    ):
+        # if there is a 6x6 space, everything in the deck is valid
+        # everythingValid = False
+        # for row in range(rowTile, rowTile + 7):
+        #     for col in range(colTile, colTile + 7):
+        #         if self.boardArray[row][col] != self.tileColor:
+        #             everythingValid = False
+        #             break
+        # if everythingValid:
+        #     player.placements[(rowTile, colTile)] = copy.deepcopy(player.pieces)
+        #     return
+        placementType = self.getPlacementType(player, rowTile, colTile)
+        pieceDeck = player.deck[placementPos]
+        for piece in pieceDeck:
+            piece.x, piece.y = self.tilePos(rowTile, colTile)
+            if (placementType == "bottomLeft" or placementType == "topLeft"):
+                piece.x -= self.tileOffset * piece.sizeInTiles[1]
+            if (placementType == "topLeft" or placementType == "topRight"):
+                piece.y -= self.tileOffset * piece.sizeInTiles[0]
+
+            if self.pieceWithinBoard(piece) and (
+                self.checkValidity(player, piece)
+                if player.played
+                else self.checkValidityTurn1(player, piece)
+            ):
+                player.placements[(rowTile, colTile)].append(piece)
+            # screen.fill((255, 255, 255))
+            # screen.blit(self.board, (self.boardStartX, self.boardStartY))
+            # Player.printPieces(player, screen)
+            # pg.display.flip()
+            # time.sleep(0.05)
 
     def updatePlacements(self, piece):
         pieceRowStart = round(
@@ -589,7 +630,7 @@ class Game:
         return players
 
     def updatePlacement(self, minHeight, minWidth, player, place):
-        for piece in reversed(player.placements[place]):
+        for piece in reversed(player.placements[place].pieces):
             if (
                 piece.sizeInTiles[0] >= minHeight
                 and piece.sizeInTiles[1] >= minWidth
@@ -607,7 +648,42 @@ class Game:
         for player in [self.player1, self.player2, self.player3, self.player4]:
             emptyPlacements = []
             for place in player.placements:
-                if not player.placements[place]:
+                if Player.Placement.empty(player.placements[place]):
                     emptyPlacements.append(place)
             for place in emptyPlacements:
                 player.placements.pop(place)
+
+    def setUpPieceDeck(self, player, screen):
+        self.boardArray[10][10] = player.color
+        player.deck["lowerRight"] = self.getPieceDeck(player, 11, 11, screen)
+        player.deck["lowerLeft"] = self.getPieceDeck(player, 11, 9, screen)
+        player.deck["upperLeft"] = self.getPieceDeck(player, 9, 9, screen)
+        player.deck["upperRight"] = self.getPieceDeck(player, 9, 11, screen)
+
+    def tilePos(self, row, col):
+        return (
+            self.boardStartX + self.borderSize + (col * self.tileOffset),
+            self.boardStartY + self.borderSize + (row * self.tileOffset),
+        )
+
+    def getPlacementType(self, player, row, col):
+        if (
+            self.tileWithinBoard(row - 1, col - 1)
+            and self.boardArray[row - 1][col - 1] == player.color
+        ):
+            return "lowerRight"
+        elif (
+            self.tileWithinBoard(row - 1, col + 1)
+            and self.boardArray[row - 1][col + 1] == player.color
+        ):
+            return "lowerLeft"
+        elif (
+            self.tileWithinBoard(row + 1, col + 1)
+            and self.boardArray[row + 1][col + 1] == player.color
+        ):
+            return "upperLeft"
+        elif (
+            self.tileWithinBoard(row + 1, col - 1)
+            and self.boardArray[row + 1][col - 1] == player.color
+        ):
+            return "upperRight"

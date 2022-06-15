@@ -12,6 +12,12 @@ class Player:
         self.out = False
         self.pieces = []
         self.color = (0, 0, 0)
+        self.deck = {
+            "lowerLeft": [],
+            "lowerRight": [],
+            "upperLeft": [],
+            "upperRight": [],
+        }
         self.placements = {}
 
     def initInventory(self, inventoryStartX, inventoryStartY, tileOffset):
@@ -80,9 +86,13 @@ class Player:
                             self.pieces.remove(inv)
                             break
                     for inv in self.placements:
-                        for inv2 in self.placements[inv]:
+                        for inv2 in self.placements[inv].pieces:
                             if piece.array == inv2.array:
                                 self.placements[inv].remove(inv2)
+                    for inv in self.deck:
+                        for inv2 in self.deck[inv]:
+                            if piece.array == inv2.array:
+                                self.deck[inv].remove(inv2)
                     piece.rotateCW()
                 piece.flipOverX()
             piece.flipOverY()
@@ -134,3 +144,41 @@ class Player:
     @out.setter
     def out(self, out):
         self._out = out
+
+    @property
+    def deck(self):
+        return self._deck
+
+    @deck.setter
+    def deck(self, deck):
+        self._deck = deck
+
+    class Placement:
+        def __init__(self, type):
+            self.pieces = []
+            self.type = type
+
+        @property
+        def pieces(self):
+            return self._pieces
+
+        @pieces.setter
+        def pieces(self, pieces):
+            self._pieces = pieces
+
+        def append(self, piece):
+            self.pieces.append(piece)
+
+        def remove(self, piece):
+            self.pieces.remove(piece)
+
+        def empty(self):
+            self.pieces = []
+
+        @property
+        def type(self):
+            return self._type
+
+        @type.setter
+        def type(self, type):
+            self._type = type
