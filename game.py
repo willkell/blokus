@@ -9,8 +9,6 @@ import pygame as pg
 from piece import Piece
 from player import Player
 
-# import time
-
 
 class Game:
     def __init__(self):
@@ -154,8 +152,9 @@ class Game:
                         print("Player 4 wins", end="")
                     print(" With a score of:", maxScore)
 
-                    pg.quit()
-                    sys.exit()
+                    # pg.quit()
+                    # sys.exit()
+                    return
                 if event.type == pg.MOUSEBUTTONDOWN:
                     canDrag, currPiece = Player.checkForDrag(currentPlayer, event.pos)
                 if event.type == pg.MOUSEBUTTONUP:
@@ -244,8 +243,9 @@ class Game:
                 print(" With a score of:", maxScore)
                 print("--- %s seconds ---" % (time.time() - startTime))
 
-                pg.quit()
-                sys.exit()
+                # pg.quit()
+                # sys.exit()
+                return
             if currentPlayer.out:
                 currentPlayer = self.getNextPlayer(currentPlayer)
 
@@ -256,7 +256,8 @@ class Game:
                 Piece.drag(currPiece, mouse_rel)
             screen.fill((255, 255, 255, 255))
             screen.blit(self.board, (self.boardStartX, self.boardStartY))
-            Player.printPieces(currentPlayer, screen)
+            if not currentPlayer.playerType == "AI":
+                Player.printPieces(currentPlayer, screen)
             pg.display.flip()
             clock.tick(144)
 
@@ -512,8 +513,7 @@ class Game:
                             # time.sleep(0.05)
                             if (
                                 self.pieceWithinBoard(piece)
-                                and piece.array[initialTile[0]][initialTile[1]]
-                                == "p"
+                                and piece.array[initialTile[0]][initialTile[1]] == "p"
                                 and self.checkValidity(player, piece)
                             ):
                                 pieceDeck.append(copy.deepcopy(piece))
@@ -555,9 +555,9 @@ class Game:
         pieceDeck = player.deck[placementPos]
         for piece in pieceDeck:
             piece.x, piece.y = self.tilePos(rowTile, colTile)
-            if (placementPos == "lowerLeft" or placementPos == "upperLeft"):
+            if placementPos == "lowerLeft" or placementPos == "upperLeft":
                 piece.x -= self.tileOffset * (piece.sizeInTiles[1] - 1)
-            if (placementPos == "upperLeft" or placementPos == "upperRight"):
+            if placementPos == "upperLeft" or placementPos == "upperRight":
                 piece.y -= self.tileOffset * (piece.sizeInTiles[0] - 1)
 
             if self.pieceWithinBoard(piece) and (
@@ -565,7 +565,7 @@ class Game:
                 if player.played
                 else self.checkValidityTurn1(player, piece)
             ):
-                player.placements[(rowTile, colTile)].append(copy.deepcopy(piece))
+                player.placements[(rowTile, colTile)].append(Piece.insertCopy(piece))
             # screen.fill((255, 255, 255))
             # screen.blit(self.board, (self.boardStartX, self.boardStartY))
             # # Player.printPieces(player, screen)

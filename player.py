@@ -78,24 +78,17 @@ class Player:
         self.pieces.remove(piece)
 
     def removeAllPiece(self, piece):
-        for _ in range(2):
-            for _ in range(2):
-                for _ in range(4):
-                    for inv in self.pieces:
-                        if piece.array == inv.array:
-                            self.pieces.remove(inv)
-                            break
-                    for inv in self.placements:
-                        for inv2 in self.placements[inv].pieces:
-                            if piece.array == inv2.array:
-                                self.placements[inv].remove(inv2)
-                    for inv in self.deck:
-                        for inv2 in self.deck[inv]:
-                            if piece.array == inv2.array:
-                                self.deck[inv].remove(inv2)
-                    piece.rotateCW()
-                piece.flipOverX()
-            piece.flipOverY()
+        for inv in reversed(self.pieces):
+            if piece.type == inv.type:
+                self.pieces.remove(inv)
+        for inv in self.placements:
+            for inv2 in reversed(self.placements[inv].pieces):
+                if piece.type == inv2.type:
+                    self.placements[inv].remove(inv2)
+        for inv in self.deck:
+            for inv2 in reversed(self.deck[inv]):
+                if piece.type == inv2.type:
+                    self.deck[inv].remove(inv2)
 
     @property
     def color(self):
