@@ -10,6 +10,7 @@ from piece import Piece
 from player import Player
 
 
+
 class Game:
     def __init__(self):
         self.player1 = Player(1, "AI")
@@ -152,9 +153,8 @@ class Game:
                         print("Player 4 wins", end="")
                     print(" With a score of:", maxScore)
 
-                    # pg.quit()
-                    # sys.exit()
-                    return
+                    pg.quit()
+                    sys.exit()
                 if event.type == pg.MOUSEBUTTONDOWN:
                     canDrag, currPiece = Player.checkForDrag(currentPlayer, event.pos)
                 if event.type == pg.MOUSEBUTTONUP:
@@ -243,9 +243,8 @@ class Game:
                 print(" With a score of:", maxScore)
                 print("--- %s seconds ---" % (time.time() - startTime))
 
-                # pg.quit()
-                # sys.exit()
-                return
+                pg.quit()
+                sys.exit()
             if currentPlayer.out:
                 currentPlayer = self.getNextPlayer(currentPlayer)
 
@@ -513,7 +512,8 @@ class Game:
                             # time.sleep(0.05)
                             if (
                                 self.pieceWithinBoard(piece)
-                                and piece.array[initialTile[0]][initialTile[1]] == "p"
+                                and piece.array[initialTile[0]][initialTile[1]]
+                                == "p"
                                 and self.checkValidity(player, piece)
                             ):
                                 pieceDeck.append(copy.deepcopy(piece))
@@ -555,9 +555,9 @@ class Game:
         pieceDeck = player.deck[placementPos]
         for piece in pieceDeck:
             piece.x, piece.y = self.tilePos(rowTile, colTile)
-            if placementPos == "lowerLeft" or placementPos == "upperLeft":
+            if (placementPos == "lowerLeft" or placementPos == "upperLeft"):
                 piece.x -= self.tileOffset * (piece.sizeInTiles[1] - 1)
-            if placementPos == "upperLeft" or placementPos == "upperRight":
+            if (placementPos == "upperLeft" or placementPos == "upperRight"):
                 piece.y -= self.tileOffset * (piece.sizeInTiles[0] - 1)
 
             if self.pieceWithinBoard(piece) and (
