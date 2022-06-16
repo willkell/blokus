@@ -106,11 +106,6 @@ class Game:
         Player.initInventory(
             self.player4, self.inventoryStartX, self.inventoryStartY, self.tileOffset
         )
-        currentPlayer = self.player1
-        canDrag = False
-        dropped = False
-        currPiece = None
-        outCounter = 0
         self.setUpPieceDeck(self.player1, screen)
         self.player1.placements[(0, 0)] = Player.Placement("lowerRight")
         self.initialPlacement(self.player1, 0, 0, screen, "lowerRight")
@@ -123,6 +118,14 @@ class Game:
         self.setUpPieceDeck(self.player4, screen)
         self.player4.placements[(19, 0)] = Player.Placement("upperRight")
         self.initialPlacement(self.player4, 19, 0, screen, "upperRight")
+        Player.initInventory(
+            self.player1, self.inventoryStartX, self.inventoryStartY, self.tileOffset
+        )
+        currentPlayer = self.player1
+        canDrag = False
+        dropped = False
+        currPiece = None
+        outCounter = 0
 
         while is_running:
             for event in pg.event.get():
@@ -175,8 +178,8 @@ class Game:
                     ):
                         currentPlayer.played = True
                         currentPlayer.pieces.append(currPiece)
-                        self.updatePlacements(currPiece)
                         self.commitToBoard(currentPlayer, currPiece, screen)
+                        self.updatePlacements(currPiece)
                         currentPlayer.score += currPiece.numTiles
                         Player.removeAllPiece(currentPlayer, currPiece)
                         dropped = False
@@ -444,6 +447,8 @@ class Game:
         for row in piece.array[1:-1]:
             for tile in row[1:-1]:
                 if tile == "p":
+                    if self.boardArray[rowTile][colTile] != self.tileColor:
+                        print("Error: tile already full")
                     self.boardArray[rowTile][colTile] = player.color
                     if (rowTile, colTile) in self.player1.placements:
                         self.player1.placements.pop((rowTile, colTile))
@@ -456,6 +461,8 @@ class Game:
                 colTile += 1
             rowTile += 1
             colTile = colTileArrStart + 1
+        # screen.blit(piece.image, (piece.x, piece.y))
+        # pg.display.flip()
         rowTile = rowTileArrStart
         colTile = colTileArrStart
         for row in piece.array:
@@ -491,41 +498,40 @@ class Game:
         # pieces = copy.deepcopy(player.pieces)
         for piece in player.pieces:
             for _ in range(2):
-                for _ in range(2):
-                    for _ in range(4):
+                for _ in range(4):
+                    piece.x = initialPieceX
+                    piece.y = initialPieceY
+                    initialTile = [1, 1]
+                    for _ in range(piece.sizeInTiles[0]):
+                        for _ in range(piece.sizeInTiles[1]):
+                            # screen.fill((255, 255, 255))
+                            # screen.blit(self.board, (self.boardStartX, self.boardStartY))
+                            # Player.printPieces(player, screen)
+                            # screen.blit(piece.image, (piece.x, piece.y))
+                            # pg.display.flip()
+                            # time.sleep(0.05)
+                            if (
+                                self.pieceWithinBoard(piece)
+                                and piece.array[initialTile[0]][initialTile[1]]
+                                == "p"
+                                and self.checkValidity(player, piece)
+                            ):
+                                pieceDeck.append(copy.deepcopy(piece))
+                            piece.x -= self.tileOffset
+                            initialTile[1] += 1
+                        piece.y -= self.tileOffset
                         piece.x = initialPieceX
-                        piece.y = initialPieceY
-                        initialTile = [1, 1]
-                        for _ in range(piece.sizeInTiles[0]):
-                            for _ in range(piece.sizeInTiles[1]):
-                                screen.fill((255, 255, 255))
-                                screen.blit(self.board, (self.boardStartX, self.boardStartY))
-                                # Player.printPieces(player, screen)
-                                screen.blit(piece.image, (piece.x, piece.y))
-                                pg.display.flip()
-                                time.sleep(0.05)
-                                if (
-                                    self.pieceWithinBoard(piece)
-                                    and piece.array[initialTile[0]][initialTile[1]]
-                                    == "p"
-                                    and self.checkValidity(player, piece)
-                                ):
-                                    pieceDeck.append(copy.deepcopy(piece))
-                                piece.x -= self.tileOffset
-                                initialTile[1] += 1
-                            piece.y -= self.tileOffset
-                            piece.x = initialPieceX
-                            initialTile[0] += 1
-                            initialTile[1] = 1
-                        if piece.symmetryRotate:
-                            break
-                        piece.rotateCW()
-                    if piece.symmetryY:
+                        initialTile[0] += 1
+                        initialTile[1] = 1
+                    if piece.symmetryRotate:
                         break
+                    piece.rotateCW()
+                if not piece.symmetryY:
                     piece.flipOverY()
-                if piece.symmetryX:
+                elif not piece.symmetryX:
+                    piece.flipOverX()
+                else:
                     break
-                piece.flipOverX()
         return pieceDeck
 
     def initialPlacement(
@@ -559,12 +565,12 @@ class Game:
                 if player.played
                 else self.checkValidityTurn1(player, piece)
             ):
-                player.placements[(rowTile, colTile)].append(piece)
-            screen.fill((255, 255, 255))
-            screen.blit(self.board, (self.boardStartX, self.boardStartY))
-            # Player.printPieces(player, screen)
-            screen.blit(piece.image, (piece.x, piece.y))
-            pg.display.flip()
+                player.placements[(rowTile, colTile)].append(copy.deepcopy(piece))
+            # screen.fill((255, 255, 255))
+            # screen.blit(self.board, (self.boardStartX, self.boardStartY))
+            # # Player.printPieces(player, screen)
+            # screen.blit(piece.image, (piece.x, piece.y))
+            # pg.display.flip()
             # time.sleep(0.05)
 
     def updatePlacements(self, piece):
@@ -660,6 +666,7 @@ class Game:
         player.deck["lowerLeft"] = self.getPieceDeck(player, 11, 9, screen)
         player.deck["upperLeft"] = self.getPieceDeck(player, 9, 9, screen)
         player.deck["upperRight"] = self.getPieceDeck(player, 9, 11, screen)
+        self.boardArray[10][10] = self.tileColor
 
     def tilePos(self, row, col):
         return (
@@ -688,3 +695,8 @@ class Game:
             and self.boardArray[row + 1][col - 1] == player.color
         ):
             return "upperRight"
+        else:
+            print(row, col)
+            while True:
+                time.sleep(1)
+            # return "none"

@@ -173,7 +173,7 @@ class Player:
             self.pieces.remove(piece)
 
         def empty(self):
-            self.pieces = []
+            return self.pieces == []
 
         @property
         def type(self):
