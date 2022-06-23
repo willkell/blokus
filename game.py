@@ -12,9 +12,9 @@ from player import Player
 
 class Game:
     def __init__(self):
-        self.player1 = Player(1, "Random")
-        self.player2 = Player(2, "Random")
-        self.player3 = Player(3, "Random")
+        self.player1 = Player(1, "Greedy")
+        self.player2 = Player(2, "Greedy")
+        self.player3 = Player(3, "Greedy")
         self.player4 = Player(4, "Greedy")
         self.screenHeight = 0
         self.screenWidth = 0
@@ -79,7 +79,7 @@ class Game:
             maxPlaceSpace = max(maxPlaceSpace, place[1].space)
 
         listPlacements = filter(lambda x: x[1].space == maxPlaceSpace, listPlacements)
-        placement = random.choice(list(listPlacements))
+        placement = random.choice(list(listPlacements))[0]
         placeList = player.placements[placement].pieces
         maxPieceSize = -1
         for piece in placeList:
@@ -99,7 +99,7 @@ class Game:
         player.score += piece.numTiles
         self.commitToBoard(player, piece, screen)
         self.updatePlacements(piece)
-        time.sleep(0.9)
+        # time.sleep(0.9)
         player = self.getNextPlayer(player)
         Player.initInventory(
             player,
@@ -296,6 +296,7 @@ class Game:
 
             elif currentPlayer.playerType == "Greedy":
                 currentPlayer = self.getGreedyMove(currentPlayer, screen)
+                # time.sleep(0.9)
             mouse_rel = pg.mouse.get_rel()
             if canDrag:
                 Piece.drag(currPiece, mouse_rel)
@@ -694,8 +695,8 @@ class Game:
                 )
             ):
                 player.placements[place].remove(piece)
-        # update the size of the placement
-        place.space = self.getPlacementSpace(self, place[0], place[1])
+        # update the space of the placement
+        player.placements[place].space = self.getPlacementSpace(player, place[0], place[1])
         # if not player.placements[place]:
         #     player.placements.pop(place)
 
@@ -753,7 +754,7 @@ class Game:
         return not (
             (
                 self.tileWithinBoard(row, col)
-                and self.boardArray[row][col] == player.color
+                and self.boardArray[row][col] != self.tileColor
             )
             or (
                 self.tileWithinBoard(row, col + 1)
