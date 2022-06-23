@@ -1,22 +1,21 @@
 import copy
+import math
 import random
 import sys
 import time
 
-# import numpy as np
 import pygame as pg
 
 from piece import Piece
 from player import Player
 
 
-
 class Game:
     def __init__(self):
-        self.player1 = Player(1, "AI")
-        self.player2 = Player(2, "AI")
-        self.player3 = Player(3, "AI")
-        self.player4 = Player(4, "AI")
+        self.player1 = Player(1, "Random")
+        self.player2 = Player(2, "Random")
+        self.player3 = Player(3, "Random")
+        self.player4 = Player(4, "Greedy")
         self.screenHeight = 0
         self.screenWidth = 0
         self.boardSize = 0
@@ -66,10 +65,54 @@ class Game:
         )
         return currentPlayer
 
+    def distToCorner(self, player, x):
+        return math.sqrt(
+            math.pow(x[0] - self.safeCorners[player][0], 2)
+            + math.pow(x[1] - self.safeCorners[player][1], 2)
+        )
+
+    def getGreedyMove(self, player, screen):
+        player.played = True
+        listPlacements = list(player.placements.items())
+        maxPlaceSpace = -1
+        for place in listPlacements:
+            maxPlaceSpace = max(maxPlaceSpace, place[1].space)
+
+        listPlacements = filter(lambda x: x[1].space == maxPlaceSpace, listPlacements)
+        placement = random.choice(list(listPlacements))
+        placeList = player.placements[placement].pieces
+        maxPieceSize = -1
+        for piece in placeList:
+            maxPieceSize = max(
+                maxPieceSize, piece.sizeInTiles[0] * piece.sizeInTiles[1]
+            )
+
+        placeList = list(
+            filter(
+                lambda x: x.sizeInTiles[0] * x.sizeInTiles[1] == maxPieceSize, placeList
+            )
+        )
+
+        piece = copy.deepcopy(random.choice(placeList))
+        player.placements.pop(placement)
+        player.pieces.append(piece)
+        player.score += piece.numTiles
+        self.commitToBoard(player, piece, screen)
+        self.updatePlacements(piece)
+        time.sleep(0.9)
+        player = self.getNextPlayer(player)
+        Player.initInventory(
+            player,
+            self.inventoryStartX,
+            self.inventoryStartY,
+            self.tileOffset,
+        )
+        return player
+
     def run(self):
         startTime = time.time()
         pg.init()
-        screen = pg.display.set_mode((0, 0), pg.FULLSCREEN)
+        screen = pg.display.set_mode((1200, 700))
         self.set_up_screen(
             pg.display.get_surface().get_size()[0],
             pg.display.get_surface().get_size()[1],
@@ -248,8 +291,11 @@ class Game:
             if currentPlayer.out:
                 currentPlayer = self.getNextPlayer(currentPlayer)
 
-            elif currentPlayer.playerType == "AI":
+            elif currentPlayer.playerType == "Random":
                 currentPlayer = self.getRandomMove(currentPlayer, screen)
+
+            elif currentPlayer.playerType == "Greedy":
+                currentPlayer = self.getGreedyMove(currentPlayer, screen)
             mouse_rel = pg.mouse.get_rel()
             if canDrag:
                 Piece.drag(currPiece, mouse_rel)
@@ -470,11 +516,12 @@ class Game:
                 if (
                     tile == "y"
                     and self.tileWithinBoard(rowTile, colTile)
-                    and self.boardArray[rowTile][colTile] == self.tileColor
+                    and self.validForPlayer(player, rowTile, colTile)
                     and not ((rowTile, colTile) in player.placements)
                 ):
                     player.placements[(rowTile, colTile)] = Player.Placement(
-                        self.getPlacementType(player, rowTile, colTile)
+                        self.getPlacementType(player, rowTile, colTile),
+                        self.getPlacementSpace(player, rowTile, colTile),
                     )
                     self.initialPlacement(
                         player,
@@ -512,8 +559,7 @@ class Game:
                             # time.sleep(0.05)
                             if (
                                 self.pieceWithinBoard(piece)
-                                and piece.array[initialTile[0]][initialTile[1]]
-                                == "p"
+                                and piece.array[initialTile[0]][initialTile[1]] == "p"
                                 and self.checkValidity(player, piece)
                             ):
                                 pieceDeck.append(copy.deepcopy(piece))
@@ -555,9 +601,9 @@ class Game:
         pieceDeck = player.deck[placementPos]
         for piece in pieceDeck:
             piece.x, piece.y = self.tilePos(rowTile, colTile)
-            if (placementPos == "lowerLeft" or placementPos == "upperLeft"):
+            if placementPos == "lowerLeft" or placementPos == "upperLeft":
                 piece.x -= self.tileOffset * (piece.sizeInTiles[1] - 1)
-            if (placementPos == "upperLeft" or placementPos == "upperRight"):
+            if placementPos == "upperLeft" or placementPos == "upperRight":
                 piece.y -= self.tileOffset * (piece.sizeInTiles[0] - 1)
 
             if self.pieceWithinBoard(piece) and (
@@ -648,6 +694,8 @@ class Game:
                 )
             ):
                 player.placements[place].remove(piece)
+        # update the size of the placement
+        place.space = self.getPlacementSpace(self, place[0], place[1])
         # if not player.placements[place]:
         #     player.placements.pop(place)
 
@@ -700,3 +748,64 @@ class Game:
             while True:
                 time.sleep(1)
             # return "none"
+
+    def validForPlayer(self, player: Player, row: int, col: int) -> bool:
+        return not (
+            (
+                self.tileWithinBoard(row, col)
+                and self.boardArray[row][col] == player.color
+            )
+            or (
+                self.tileWithinBoard(row, col + 1)
+                and self.boardArray[row - 1][col] == player.color
+            )
+            or (
+                self.tileWithinBoard(row + 1, col)
+                and self.boardArray[row - 1][col] == player.color
+            )
+            or (
+                self.tileWithinBoard(row, col - 1)
+                and self.boardArray[row - 1][col] == player.color
+            )
+            or (
+                self.tileWithinBoard(row - 1, col)
+                and self.boardArray[row - 1][col] == player.color
+            )
+        )
+
+    def getPlacementSpace(self, player: Player, row: int, col: int) -> int:
+        space = 0
+        # check above for how much space
+        checkRow = row - 1
+        checkCol = col
+        while self.tileWithinBoard(checkRow, checkCol) and self.validForPlayer(
+            player, checkRow, checkCol
+        ):
+            space += 1
+            checkRow -= 1
+        # check to the right
+        checkRow = row
+        checkCol = col + 1
+        while self.tileWithinBoard(checkRow, checkCol) and self.validForPlayer(
+            player, checkRow, checkCol
+        ):
+            space += 1
+            checkCol += 1
+        # check to the bottom
+        checkRow = row + 1
+        checkCol = col
+        while self.tileWithinBoard(checkRow, checkCol) and self.validForPlayer(
+            player, checkRow, checkCol
+        ):
+            space += 1
+            checkRow += 1
+        # check to the right
+        checkRow = row
+        checkCol = col - 1
+        while self.tileWithinBoard(checkRow, checkCol) and self.validForPlayer(
+            player, checkRow, checkCol
+        ):
+            space += 1
+            checkCol -= 1
+
+        return space

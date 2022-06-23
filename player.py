@@ -147,9 +147,10 @@ class Player:
         self._deck = deck
 
     class Placement:
-        def __init__(self, type):
+        def __init__(self, type, space=0):
             self.pieces = []
             self.type = type
+            self.space = space
 
         @property
         def pieces(self):
@@ -175,3 +176,11 @@ class Player:
         @type.setter
         def type(self, type):
             self._type = type
+
+        @property
+        def space(self):
+            return self._space
+
+        @space.setter
+        def space(self, space):
+            self._space = space
