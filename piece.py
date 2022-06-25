@@ -57,7 +57,7 @@ class Piece:
         cls = self.__class__
         result = cls.__new__(cls)
         for k, v in self.__dict__.items():
-            if k == "x" or k == "y":
+            if k == "x" or k == "y" or k == "placementsBlocked":
                 setattr(result, k, copy.deepcopy(v))
             else:
                 setattr(result, k, v)

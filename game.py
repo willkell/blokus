@@ -14,7 +14,7 @@ class Game:
     def __init__(self):
         self.player1 = Player(1, "Random")
         self.player2 = Player(2, "Random")
-        self.player3 = Player(3, "Random")
+        self.player3 = Player(3, "Greedy")
         self.player4 = Player(4, "Greedy")
         self.screenHeight = 0
         self.screenWidth = 0
@@ -74,18 +74,18 @@ class Game:
     def getGreedyMove(self, player, screen):
         player.played = True
         listPlacements = list(player.placements.items())
-        maxPieceAccess = -1
+        maxPlacementsStopped = 0
         bestPlacement = random.choice(list(player.placements.keys()))
         bestPiece = random.choice(player.placements[bestPlacement].pieces)
         for place in listPlacements:
             for piece in place[1].pieces:
-                if piece.access >= maxPieceAccess:
-                    maxPieceAccess = piece.access
+                if piece.placementsBlocked > maxPlacementsStopped:
+                    maxPlacementsStopped = piece.placementsBlocked
                     bestPlacement = place[0]
                     bestPiece = piece
 
         piece = bestPiece
-        print(maxPieceAccess)
+        print(maxPlacementsStopped)
         player.placements.pop(bestPlacement)
         player.pieces.append(piece)
         player.score += piece.numTiles
@@ -677,6 +677,16 @@ class Game:
             players.append(self.player4)
         return players
 
+    def enemyPlacements(self, player, row, col):
+        players = [self.player1, self.player2, self.player3, self.player4]
+        players.remove(player)
+        places = 0
+        for player in players:
+            if (row, col) in player.placements:
+                places += 1
+        return places
+
+
     def updatePlacement(self, minHeight, minWidth, player, place):
         for piece in reversed(player.placements[place].pieces):
             if (
@@ -853,6 +863,7 @@ class Game:
 
     def getPieceAccess(self, player, piece, screen):
         access = 0
+        piece.placementsBlocked = 0
         self.mergePieceArr(player, piece, screen)
         rowTileArrStart = round(
             ((piece.y - self.boardStartY - self.borderSize) / self.tileOffset) - 1
@@ -876,6 +887,8 @@ class Game:
                         colTile,
                         self.getPlacementType(player, rowTile, colTile),
                     )
+                elif tile == "p":
+                    piece.placementsBlocked += self.enemyPlacements(player, rowTile, colTile)
                 colTile += 1
             rowTile += 1
             colTile = colTileArrStart
