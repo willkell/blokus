@@ -17,6 +17,8 @@ class Piece:
         symmetryY=False,
         symmetryRotate=False,
         type="",
+        placementsBlocked=0,
+        access=0,
     ):
         self.x = x
         self.y = y
@@ -32,6 +34,8 @@ class Piece:
         self.symmetryY = symmetryY
         self.symmetryRotate = symmetryRotate
         self.type = type
+        self.placementsBlocked = placementsBlocked
+        self.access = access
         for _ in range(sizeInTiles[0] + 2):
             rowArray = []
             for _ in range(sizeInTiles[1] + 2):
@@ -967,3 +971,19 @@ class Piece:
     @type.setter
     def type(self, value):
         self.__type = value
+
+    @property
+    def placementsBlocked(self):
+        return self.__placementsBlocked
+
+    @placementsBlocked.setter
+    def placementsBlocked(self, placementsBlocked):
+        self.__placementsBlocked = placementsBlocked
+
+    @property
+    def access(self):
+        return self.__access
+
+    @access.setter
+    def access(self, access):
+        self.__access = access

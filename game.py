@@ -12,9 +12,9 @@ from player import Player
 
 class Game:
     def __init__(self):
-        self.player1 = Player(1, "Greedy")
-        self.player2 = Player(2, "Greedy")
-        self.player3 = Player(3, "Greedy")
+        self.player1 = Player(1, "Random")
+        self.player2 = Player(2, "Random")
+        self.player3 = Player(3, "Random")
         self.player4 = Player(4, "Greedy")
         self.screenHeight = 0
         self.screenWidth = 0
@@ -74,27 +74,19 @@ class Game:
     def getGreedyMove(self, player, screen):
         player.played = True
         listPlacements = list(player.placements.items())
-        maxPlaceSpace = -1
+        maxPieceAccess = -1
+        bestPlacement = random.choice(list(player.placements.keys()))
+        bestPiece = random.choice(player.placements[bestPlacement].pieces)
         for place in listPlacements:
-            maxPlaceSpace = max(maxPlaceSpace, place[1].space)
+            for piece in place[1].pieces:
+                if piece.access >= maxPieceAccess:
+                    maxPieceAccess = piece.access
+                    bestPlacement = place[0]
+                    bestPiece = piece
 
-        listPlacements = filter(lambda x: x[1].space == maxPlaceSpace, listPlacements)
-        placement = random.choice(list(listPlacements))[0]
-        placeList = player.placements[placement].pieces
-        maxPieceSize = -1
-        for piece in placeList:
-            maxPieceSize = max(
-                maxPieceSize, piece.sizeInTiles[0] * piece.sizeInTiles[1]
-            )
-
-        placeList = list(
-            filter(
-                lambda x: x.sizeInTiles[0] * x.sizeInTiles[1] == maxPieceSize, placeList
-            )
-        )
-
-        piece = copy.deepcopy(random.choice(placeList))
-        player.placements.pop(placement)
+        piece = bestPiece
+        print(maxPieceAccess)
+        player.placements.pop(bestPlacement)
         player.pieces.append(piece)
         player.score += piece.numTiles
         self.commitToBoard(player, piece, screen)
@@ -612,7 +604,9 @@ class Game:
                 if player.played
                 else self.checkValidityTurn1(player, piece)
             ):
+                piece.access = self.getPieceAccess(player, piece, screen)
                 player.placements[(rowTile, colTile)].append(Piece.insertCopy(piece))
+
             # screen.fill((255, 255, 255))
             # screen.blit(self.board, (self.boardStartX, self.boardStartY))
             # # Player.printPieces(player, screen)
@@ -695,8 +689,12 @@ class Game:
                 )
             ):
                 player.placements[place].remove(piece)
+            else:
+                piece.access = self.getPieceAccess(player, piece, player)
         # update the space of the placement
-        player.placements[place].space = self.getPlacementSpace(player, place[0], place[1])
+        player.placements[place].space = self.getPlacementSpace(
+            player, place[0], place[1]
+        )
         # if not player.placements[place]:
         #     player.placements.pop(place)
 
@@ -810,3 +808,106 @@ class Game:
             checkCol -= 1
 
         return space
+
+    def mergePieceArr(self, player, piece, screen):
+        rowTileArrStart = round(
+            (piece.y - self.boardStartY - self.borderSize) / self.tileOffset
+        )
+        colTileArrStart = round(
+            (piece.x - self.boardStartX - self.borderSize) / self.tileOffset
+        )
+        rowTile = rowTileArrStart
+        colTile = colTileArrStart
+        for row in piece.array[1:-1]:
+            for tile in row[1:-1]:
+                if tile == "p":
+                    if self.boardArray[rowTile][colTile] != self.tileColor:
+                        print(
+                            "Error: ",
+                            rowTile,
+                            colTile,
+                            "tile already full, with ",
+                            self.boardArray[rowTile][colTile],
+                        )
+                    self.boardArray[rowTile][colTile] = player.color
+                colTile += 1
+            rowTile += 1
+            colTile = colTileArrStart
+
+    def clearPieceArr(self, player: Player, piece: Piece, screen: pg.Surface):
+        rowTileArrStart = round(
+            (piece.y - self.boardStartY - self.borderSize) / self.tileOffset
+        )
+        colTileArrStart = round(
+            (piece.x - self.boardStartX - self.borderSize) / self.tileOffset
+        )
+        rowTile = rowTileArrStart
+        colTile = colTileArrStart
+        for row in piece.array[1:-1]:
+            for tile in row[1:-1]:
+                if tile == "p":
+                    self.boardArray[rowTile][colTile] = self.tileColor
+                colTile += 1
+            rowTile += 1
+            colTile = colTileArrStart
+
+    def getPieceAccess(self, player, piece, screen):
+        access = 0
+        self.mergePieceArr(player, piece, screen)
+        rowTileArrStart = round(
+            ((piece.y - self.boardStartY - self.borderSize) / self.tileOffset) - 1
+        )
+        colTileArrStart = round(
+            ((piece.x - self.boardStartX - self.borderSize) / self.tileOffset) - 1
+        )
+
+        rowTile = rowTileArrStart
+        colTile = colTileArrStart
+        for row in piece.array:
+            for tile in row:
+                if (
+                    tile == "y"
+                    and self.tileWithinBoard(rowTile, colTile)
+                    and self.validForPlayer(player, rowTile, colTile)
+                ):
+                    access += self.getPlaceAccess(
+                        player,
+                        rowTile,
+                        colTile,
+                        self.getPlacementType(player, rowTile, colTile),
+                    )
+                colTile += 1
+            rowTile += 1
+            colTile = colTileArrStart
+        self.clearPieceArr(player, piece, screen)
+        return access
+
+    def getPlaceAccess(self, player, rowTile, colTile, placementPos) -> int:
+        access = 0
+        pieceDeck = player.deck[placementPos]
+        for piece in pieceDeck:
+            putBackX = piece.x
+            putBackY = piece.y
+            piece.x, piece.y = self.tilePos(rowTile, colTile)
+            if placementPos == "lowerLeft" or placementPos == "upperLeft":
+                piece.x -= self.tileOffset * (piece.sizeInTiles[1] - 1)
+            if placementPos == "upperLeft" or placementPos == "upperRight":
+                piece.y -= self.tileOffset * (piece.sizeInTiles[0] - 1)
+
+            if self.pieceWithinBoard(piece) and (self.checkValidity(player, piece)):
+                access += piece.numTiles
+            piece.x = putBackX
+            piece.y = putBackY
+
+        return access
+
+    def printBoard(self):
+        for row in self.boardArray:
+            for cell in row:
+                if cell == self.tileColor:
+                    print("n ", end="")
+                else:
+                    print("y ", end="")
+            print("")
+
+        print("\n")
