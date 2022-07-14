@@ -49,6 +49,14 @@ class Game:
             self.player4: [19, 0],
         }
 
+    def distToCorner(self, player, x):
+        return math.sqrt(
+            math.pow(x[0] - self.safeCorners[player][0], 2)
+            + math.pow(x[1] - self.safeCorners[player][1], 2)
+        )
+
+    def distToCenter(self, player, x):
+        return math.sqrt(math.pow(x[0] - 10, 2) + math.pow(x[1] - 10, 2))
     def getRandomMove(self, currentPlayer, screen):
         currentPlayer.played = True
         placement = random.choice(list(currentPlayer.placements.keys()))
@@ -68,14 +76,6 @@ class Game:
         )
         return currentPlayer
 
-    def distToCorner(self, player, x):
-        return math.sqrt(
-            math.pow(x[0] - self.safeCorners[player][0], 2)
-            + math.pow(x[1] - self.safeCorners[player][1], 2)
-        )
-
-    def distToCenter(self, player, x):
-        return math.sqrt(math.pow(x[0] - 10, 2) + math.pow(x[1] - 10, 2))
 
     def getGreedyMove(self, player, screen):
         player.played = True
@@ -186,7 +186,7 @@ class Game:
                     if event.key == pg.K_DOWN or event.key == pg.K_s:
                         Piece.flipOverY(currPiece)
                     if event.key == pg.K_SPACE:
-                        currentPlayer = self.getRandomMove(currentPlayer, screen)
+                        cgetPlacementsBlockedurrentPlayer = self.getRandomMove(currentPlayer, screen)
                         return currentPlayer
 
             mouse_rel = pg.mouse.get_rel()
@@ -401,14 +401,6 @@ class Game:
         )
 
     def checkValidity(self, player, piece):
-        # print("Before piece:")
-        # for row in range(20):
-        #     for col in range(20):
-        #         if self.boardArray[row][col] == self.tileColor:
-        #             print("n ", end="")
-        #         else:
-        #             print("y ", end="")
-        #     print()
         isValid = False
         rowTileArrStart = round(
             ((piece.y - self.boardStartY - self.borderSize) / self.tileOffset) - 1
@@ -420,36 +412,20 @@ class Game:
         colTile = colTileArrStart
         for row in piece.array:
             for tile in row:
-                # print("checking tile at row {}, col {}".format(rowTile, colTile))
                 if self.tileWithinBoard(rowTile, colTile):
                     if (
                         tile == "p"
                         and self.boardArray[rowTile][colTile] != self.tileColor
                     ):
-                        # print(
-                        #     self.validFailureMsg(
-                        #         rowTile,
-                        #         colTile,
-                        #         "empty",
-                        #         "full",
-                        #     )
-                        # )
                         return False
                     if self.boardArray[rowTile][colTile] == player.color:
                         if tile == "n":
-                            # print(
-                            #     self.validFailureMsg(
-                            #         rowTile, colTile, "not same color", "same color"
-                            #     )
-                            # )
                             return False
                         elif tile == "y":
                             isValid = True
                 colTile += 1
             rowTile += 1
             colTile = colTileArrStart
-        # if not isValid:
-        #     print("No piece in range")
         return isValid
 
     def commitToBoard(self, player, piece, screen):
@@ -581,7 +557,7 @@ class Game:
                 if player.played
                 else self.checkValidityTurn1(player, piece)
             ):
-                # piece.access = self.getPieceAccess(player, piece, screen)
+
                 player.placements[(rowTile, colTile)].append(Piece.insertCopy(piece))
 
     def updatePlacements(self, piece):
@@ -668,8 +644,8 @@ class Game:
                 )
             ):
                 player.placements[place].remove(piece)
-            # else:
-            # piece.access = self.getPieceAccess(player, piece, player)
+            else:
+                self.getPlacementsStopped(player, piece, player)
         # update the space of the placement
         player.placements[place].space = self.getPlacementSpace(
             player, place[0], place[1]
@@ -830,33 +806,20 @@ class Game:
             rowTile += 1
             colTile = colTileArrStart
 
-    def getPieceAccess(self, player, piece, screen):
-        access = 0
+    def getPlacementsStopped(self, player, piece, screen):
         piece.placementsBlocked = 0
-        self.mergePieceArr(player, piece, screen)
         rowTileArrStart = round(
-            ((piece.y - self.boardStartY - self.borderSize) / self.tileOffset) - 1
+            ((piece.y - self.boardStartY - self.borderSize) / self.tileOffset)
         )
         colTileArrStart = round(
-            ((piece.x - self.boardStartX - self.borderSize) / self.tileOffset) - 1
+            ((piece.x - self.boardStartX - self.borderSize) / self.tileOffset)
         )
 
         rowTile = rowTileArrStart
         colTile = colTileArrStart
-        for row in piece.array:
-            for tile in row:
-                if (
-                    tile == "y"
-                    and self.tileWithinBoard(rowTile, colTile)
-                    and self.validForPlayer(player, rowTile, colTile)
-                ):
-                    access += self.getPlaceAccess(
-                        player,
-                        rowTile,
-                        colTile,
-                        self.getPlacementType(player, rowTile, colTile),
-                    )
-                elif tile == "p":
+        for row in piece.array[:-1]:
+            for tile in row[:-1]:
+                if tile == "p":
                     piece.placementsBlocked += self.enemyPlacements(
                         player, rowTile, colTile
                     )
@@ -864,7 +827,6 @@ class Game:
             rowTile += 1
             colTile = colTileArrStart
         self.clearPieceArr(player, piece, screen)
-        return access
 
     def getPlaceAccess(self, player, rowTile, colTile, placementPos) -> int:
         access = 0
