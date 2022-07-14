@@ -1,8 +1,11 @@
 import copy
 import math
+import os
 import random
 import sys
 import time
+from multiprocessing import Process
+from threading import Thread
 
 import pygame as pg
 
@@ -12,10 +15,10 @@ from player import Player
 
 class Game:
     def __init__(self):
-        self.player1 = Player(1, "Random")
+        self.player1 = Player(1, "Human")
         self.player2 = Player(2, "Random")
-        self.player3 = Player(3, "Greedy")
-        self.player4 = Player(4, "Greedy")
+        self.player3 = Player(3, "Random")
+        self.player4 = Player(4, "Human")
         self.screenHeight = 0
         self.screenWidth = 0
         self.boardSize = 0
@@ -71,20 +74,25 @@ class Game:
             + math.pow(x[1] - self.safeCorners[player][1], 2)
         )
 
+    def distToCenter(self, player, x):
+        return math.sqrt(math.pow(x[0] - 10, 2) + math.pow(x[1] - 10, 2))
+
     def getGreedyMove(self, player, screen):
         player.played = True
         listPlacements = list(player.placements.items())
         maxPlacementsStopped = 0
         bestPlacement = random.choice(list(player.placements.keys()))
-        bestPiece = random.choice(player.placements[bestPlacement].pieces)
+        bestPieces = [random.choice(player.placements[bestPlacement].pieces)]
         for place in listPlacements:
             for piece in place[1].pieces:
                 if piece.placementsBlocked > maxPlacementsStopped:
                     maxPlacementsStopped = piece.placementsBlocked
                     bestPlacement = place[0]
-                    bestPiece = piece
+                    bestPieces = [piece]
+                elif piece.placementsBlocked == maxPlacementsStopped:
+                    bestPieces.append(piece)
 
-        piece = bestPiece
+        piece = random.choice(bestPieces)
         print(maxPlacementsStopped)
         player.placements.pop(bestPlacement)
         player.pieces.append(piece)
@@ -100,6 +108,124 @@ class Game:
             self.tileOffset,
         )
         return player
+
+    def quitLoop(self):
+        while True:
+            for event in pg.event.get():
+                print("Checking escape")
+                if event.type == pg.QUIT or (
+                    event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE
+                ):
+                    print("Game over")
+                    print("Player 1:", self.player1.score)
+                    print("Player 2:", self.player2.score)
+                    print("Player 3:", self.player3.score)
+                    print("Player 4:", self.player4.score)
+                    maxScore = max(
+                        self.player1.score,
+                        self.player2.score,
+                        self.player3.score,
+                        self.player4.score,
+                    )
+                    if self.player1.score == maxScore:
+                        print("Player 1 wins", end="")
+                    elif self.player2.score == maxScore:
+                        print("Player 2 wins", end="")
+                    elif self.player3.score == maxScore:
+                        print("Player 3 wins", end="")
+                    elif self.player4.score == maxScore:
+                        print("Player 4 wins", end="")
+                    print(" With a score of:", maxScore)
+
+                    # pg.quit()
+                    return
+                    # sys.exit()
+                    # os._exit(0)
+
+    def getHumanMove(self, currentPlayer, screen, clock):
+        canDrag = False
+        dropped = False
+        currPiece = None
+
+        while True:
+            for event in pg.event.get():
+                print("checking event")
+                if event.type == pg.MOUSEBUTTONDOWN:
+                    print("Mouse down")
+                    canDrag, currPiece = Player.checkForDrag(currentPlayer, event.pos)
+                elif event.type == pg.MOUSEBUTTONUP:
+                    print("Mouse up")
+                    if canDrag:
+                        dropped = self.dropPiece(currPiece)
+                    canDrag = False
+                elif event.type == pg.KEYDOWN and event.key == pg.K_p:
+                    currentPlayer = self.getNextPlayer(currentPlayer)
+                    Player.initInventory(
+                        currentPlayer,
+                        self.inventoryStartX,
+                        self.inventoryStartY,
+                        self.tileOffset,
+                    )
+                elif event.type == pg.KEYDOWN and event.key == pg.K_RETURN:
+                    if (
+                        dropped
+                        and currPiece
+                        and (
+                            self.checkValidity(currentPlayer, currPiece)
+                            if currentPlayer.played
+                            else self.checkValidityTurn1(currentPlayer, currPiece)
+                        )
+                    ):
+                        currentPlayer.played = True
+                        currentPlayer.pieces.append(currPiece)
+                        self.commitToBoard(currentPlayer, currPiece, screen)
+                        self.updatePlacements(currPiece)
+                        currentPlayer.score += currPiece.numTiles
+                        Player.removeAllPiece(currentPlayer, currPiece)
+                        dropped = False
+                        currPiece = None
+                        currentPlayer = self.getNextPlayer(currentPlayer)
+                        Player.initInventory(
+                            currentPlayer,
+                            self.inventoryStartX,
+                            self.inventoryStartY,
+                            self.tileOffset,
+                        )
+                        return currentPlayer
+                    else:
+                        Player.initInventory(
+                            currentPlayer,
+                            self.inventoryStartX,
+                            self.inventoryStartY,
+                            self.tileOffset,
+                        )
+
+                elif event.type == pg.KEYDOWN and currPiece:
+                    if event.key == pg.K_RIGHT or event.key == pg.K_f:
+                        Piece.rotateCCW(currPiece)
+                    if event.key == pg.K_LEFT or event.key == pg.K_a:
+                        Piece.rotateCW(currPiece)
+                    if event.key == pg.K_UP or event.key == pg.K_d:
+                        Piece.flipOverX(currPiece)
+                    if event.key == pg.K_DOWN or event.key == pg.K_s:
+                        Piece.flipOverY(currPiece)
+                    if event.key == pg.K_SPACE:
+                        currentPlayer = self.getRandomMove(currentPlayer, screen)
+                        return currentPlayer
+
+                elif event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
+                    pg.quit()
+                    sys.exit()
+
+            mouse_rel = pg.mouse.get_rel()
+            if canDrag and currPiece:
+                print("Dragging")
+                Piece.drag(currPiece, mouse_rel)
+            screen.fill((255, 255, 255, 255))
+            screen.blit(self.board, (self.boardStartX, self.boardStartY))
+            Player.printPieces(currentPlayer, screen)
+            pg.display.flip()
+            clock.tick(144)
 
     def run(self):
         startTime = time.time()
@@ -156,98 +282,77 @@ class Game:
             self.player1, self.inventoryStartX, self.inventoryStartY, self.tileOffset
         )
         currentPlayer = self.player1
-        canDrag = False
-        dropped = False
-        currPiece = None
+        # canDrag = False
+        # dropped = False
+        # currPiece = None
         outCounter = 0
+        exitLoop = Process(target=self.quitLoop, daemon=True)
+        exitLoop.start()
 
         while is_running:
-            for event in pg.event.get():
-                if event.type == pg.QUIT or (
-                    event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE
-                ):
-                    is_running = False
-                    print("Game over")
-                    print("Player 1:", self.player1.score)
-                    print("Player 2:", self.player2.score)
-                    print("Player 3:", self.player3.score)
-                    print("Player 4:", self.player4.score)
-                    maxScore = max(
-                        self.player1.score,
-                        self.player2.score,
-                        self.player3.score,
-                        self.player4.score,
-                    )
-                    if self.player1.score == maxScore:
-                        print("Player 1 wins", end="")
-                    elif self.player2.score == maxScore:
-                        print("Player 2 wins", end="")
-                    elif self.player3.score == maxScore:
-                        print("Player 3 wins", end="")
-                    elif self.player4.score == maxScore:
-                        print("Player 4 wins", end="")
-                    print(" With a score of:", maxScore)
-
-                    pg.quit()
-                    sys.exit()
-                if event.type == pg.MOUSEBUTTONDOWN:
-                    canDrag, currPiece = Player.checkForDrag(currentPlayer, event.pos)
-                if event.type == pg.MOUSEBUTTONUP:
-                    if canDrag:
-                        dropped = self.dropPiece(currPiece)
-                    canDrag = False
-                if event.type == pg.KEYDOWN and event.key == pg.K_p:
-                    currentPlayer = self.getNextPlayer(currentPlayer)
-                    Player.initInventory(
-                        currentPlayer,
-                        self.inventoryStartX,
-                        self.inventoryStartY,
-                        self.tileOffset,
-                    )
-                if event.type == pg.KEYDOWN and event.key == pg.K_RETURN:
-                    if dropped and (
-                        self.checkValidity(currentPlayer, currPiece)
-                        if currentPlayer.played
-                        else self.checkValidityTurn1(currentPlayer, currPiece)
-                    ):
-                        currentPlayer.played = True
-                        currentPlayer.pieces.append(currPiece)
-                        self.commitToBoard(currentPlayer, currPiece, screen)
-                        self.updatePlacements(currPiece)
-                        currentPlayer.score += currPiece.numTiles
-                        Player.removeAllPiece(currentPlayer, currPiece)
-                        dropped = False
-                        currPiece = None
-                        currentPlayer = self.getNextPlayer(currentPlayer)
-                        Player.initInventory(
-                            currentPlayer,
-                            self.inventoryStartX,
-                            self.inventoryStartY,
-                            self.tileOffset,
-                        )
-                    else:
-                        Player.initInventory(
-                            currentPlayer,
-                            self.inventoryStartX,
-                            self.inventoryStartY,
-                            self.tileOffset,
-                        )
-
-                if event.type == pg.KEYDOWN:
-                    if event.key == pg.K_RIGHT or event.key == pg.K_f:
-                        if currPiece:
-                            Piece.rotateCCW(currPiece)
-                    if event.key == pg.K_LEFT or event.key == pg.K_a:
-                        if currPiece:
-                            Piece.rotateCW(currPiece)
-                    if event.key == pg.K_UP or event.key == pg.K_d:
-                        if currPiece and not currPiece.symmetryX:
-                            Piece.flipOverX(currPiece)
-                    if event.key == pg.K_DOWN or event.key == pg.K_s:
-                        if currPiece and not currPiece.symmetryY:
-                            Piece.flipOverY(currPiece)
-                    if event.key == pg.K_SPACE:
-                        currentPlayer = self.getRandomMove(currentPlayer, screen)
+            # for event in pg.event.get():
+            #     if event.type == pg.MOUSEBUTTONDOWN:
+            #         canDrag, currPiece = Player.checkForDrag(currentPlayer, event.pos)
+            #     if event.type == pg.MOUSEBUTTONUP:
+            #         if canDrag:
+            #             dropped = self.dropPiece(currPiece)
+            #         canDrag = False
+            #     if event.type == pg.KEYDOWN and event.key == pg.K_p:
+            #         currentPlayer = self.getNextPlayer(currentPlayer)
+            #         Player.initInventory(
+            #             currentPlayer,
+            #             self.inventoryStartX,
+            #             self.inventoryStartY,
+            #             self.tileOffset,
+            #         )
+            #     if event.type == pg.KEYDOWN and event.key == pg.K_RETURN:
+            #         if (
+            #             dropped
+            #             and currPiece
+            #             and (
+            #                 self.checkValidity(currentPlayer, currPiece)
+            #                 if currentPlayer.played
+            #                 else self.checkValidityTurn1(currentPlayer, currPiece)
+            #             )
+            #         ):
+            #             currentPlayer.played = True
+            #             currentPlayer.pieces.append(currPiece)
+            #             self.commitToBoard(currentPlayer, currPiece, screen)
+            #             self.updatePlacements(currPiece)
+            #             currentPlayer.score += currPiece.numTiles
+            #             Player.removeAllPiece(currentPlayer, currPiece)
+            #             dropped = False
+            #             currPiece = None
+            #             currentPlayer = self.getNextPlayer(currentPlayer)
+            #             Player.initInventory(
+            #                 currentPlayer,
+            #                 self.inventoryStartX,
+            #                 self.inventoryStartY,
+            #                 self.tileOffset,
+            #             )
+            #         else:
+            #             Player.initInventory(
+            #                 currentPlayer,
+            #                 self.inventoryStartX,
+            #                 self.inventoryStartY,
+            #                 self.tileOffset,
+            #             )
+            #
+            #     if event.type == pg.KEYDOWN:
+            #         if event.key == pg.K_RIGHT or event.key == pg.K_f:
+            #             if currPiece:
+            #                 Piece.rotateCCW(currPiece)
+            #         if event.key == pg.K_LEFT or event.key == pg.K_a:
+            #             if currPiece:
+            #                 Piece.rotateCW(currPiece)
+            #         if event.key == pg.K_UP or event.key == pg.K_d:
+            #             if currPiece and not currPiece.symmetryX:
+            #                 Piece.flipOverX(currPiece)
+            #         if event.key == pg.K_DOWN or event.key == pg.K_s:
+            #             if currPiece and not currPiece.symmetryY:
+            #                 Piece.flipOverY(currPiece)
+            #         if event.key == pg.K_SPACE:
+            #             currentPlayer = self.getRandomMove(currentPlayer, screen)
 
             if not currentPlayer.placements and not currentPlayer.out:
                 currentPlayer.out = True
@@ -289,9 +394,15 @@ class Game:
             elif currentPlayer.playerType == "Greedy":
                 currentPlayer = self.getGreedyMove(currentPlayer, screen)
                 # time.sleep(0.9)
-            mouse_rel = pg.mouse.get_rel()
-            if canDrag:
-                Piece.drag(currPiece, mouse_rel)
+            elif currentPlayer.playerType == "Human":
+                currentPlayer = self.getHumanMove(currentPlayer, screen, clock)
+            if not exitLoop.is_alive():
+                pg.quit()
+                sys.exit()
+
+            # mouse_rel = pg.mouse.get_rel()
+            # if canDrag:
+            #     Piece.drag(currPiece, mouse_rel)
             screen.fill((255, 255, 255, 255))
             screen.blit(self.board, (self.boardStartX, self.boardStartY))
             if not currentPlayer.playerType == "AI":
@@ -686,7 +797,6 @@ class Game:
                 places += 1
         return places
 
-
     def updatePlacement(self, minHeight, minWidth, player, place):
         for piece in reversed(player.placements[place].pieces):
             if (
@@ -888,7 +998,9 @@ class Game:
                         self.getPlacementType(player, rowTile, colTile),
                     )
                 elif tile == "p":
-                    piece.placementsBlocked += self.enemyPlacements(player, rowTile, colTile)
+                    piece.placementsBlocked += self.enemyPlacements(
+                        player, rowTile, colTile
+                    )
                 colTile += 1
             rowTile += 1
             colTile = colTileArrStart
