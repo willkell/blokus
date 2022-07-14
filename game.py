@@ -15,10 +15,10 @@ from player import Player
 
 class Game:
     def __init__(self):
-        self.player1 = Player(1, "Human")
+        self.player1 = Player(1, "Random")
         self.player2 = Player(2, "Random")
         self.player3 = Player(3, "Random")
-        self.player4 = Player(4, "Human")
+        self.player4 = Player(4, "Random")
         self.screenHeight = 0
         self.screenWidth = 0
         self.boardSize = 0
@@ -93,7 +93,6 @@ class Game:
                     bestPieces.append(piece)
 
         piece = random.choice(bestPieces)
-        print(maxPlacementsStopped)
         player.placements.pop(bestPlacement)
         player.pieces.append(piece)
         player.score += piece.numTiles
@@ -109,52 +108,29 @@ class Game:
         )
         return player
 
-    def quitLoop(self):
-        while True:
-            for event in pg.event.get():
-                print("Checking escape")
-                if event.type == pg.QUIT or (
-                    event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE
-                ):
-                    print("Game over")
-                    print("Player 1:", self.player1.score)
-                    print("Player 2:", self.player2.score)
-                    print("Player 3:", self.player3.score)
-                    print("Player 4:", self.player4.score)
-                    maxScore = max(
-                        self.player1.score,
-                        self.player2.score,
-                        self.player3.score,
-                        self.player4.score,
-                    )
-                    if self.player1.score == maxScore:
-                        print("Player 1 wins", end="")
-                    elif self.player2.score == maxScore:
-                        print("Player 2 wins", end="")
-                    elif self.player3.score == maxScore:
-                        print("Player 3 wins", end="")
-                    elif self.player4.score == maxScore:
-                        print("Player 4 wins", end="")
-                    print(" With a score of:", maxScore)
+    def updateScreen(self, screen, currentPlayer, clock):
+        screen.fill((255, 255, 255, 255))
+        screen.blit(self.board, (self.boardStartX, self.boardStartY))
+        if currentPlayer.playerType == "Human":
+            Player.printPieces(currentPlayer, screen)
+        pg.display.flip()
+        clock.tick(144)
 
-                    # pg.quit()
-                    return
-                    # sys.exit()
-                    # os._exit(0)
-
-    def getHumanMove(self, currentPlayer, screen, clock):
+    def getHumanMove(
+        self, currentPlayer, screen, clock, startTime
+    ):
         canDrag = False
         dropped = False
         currPiece = None
-
         while True:
             for event in pg.event.get():
-                print("checking event")
-                if event.type == pg.MOUSEBUTTONDOWN:
-                    print("Mouse down")
+                if event.type == pg.QUIT or (
+                    event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE
+                ):
+                    self.gameOver(startTime)
+                elif event.type == pg.MOUSEBUTTONDOWN:
                     canDrag, currPiece = Player.checkForDrag(currentPlayer, event.pos)
                 elif event.type == pg.MOUSEBUTTONUP:
-                    print("Mouse up")
                     if canDrag:
                         dropped = self.dropPiece(currPiece)
                     canDrag = False
@@ -213,19 +189,10 @@ class Game:
                         currentPlayer = self.getRandomMove(currentPlayer, screen)
                         return currentPlayer
 
-                elif event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
-                    pg.quit()
-                    sys.exit()
-
             mouse_rel = pg.mouse.get_rel()
             if canDrag and currPiece:
-                print("Dragging")
                 Piece.drag(currPiece, mouse_rel)
-            screen.fill((255, 255, 255, 255))
-            screen.blit(self.board, (self.boardStartX, self.boardStartY))
-            Player.printPieces(currentPlayer, screen)
-            pg.display.flip()
-            clock.tick(144)
+            self.updateScreen(screen, currentPlayer, clock)
 
     def run(self):
         startTime = time.time()
@@ -237,154 +204,24 @@ class Game:
         )
         self.board = self.draw_board()
         clock = pg.time.Clock()
-        is_running = True
-        self.player1.color = (255, 0, 0)
-        self.player2.color = (0, 255, 0)
-        self.player3.color = (0, 0, 255)
-        self.player4.color = (255, 255, 0)
-        Player.initPieces(
-            self.player1, self.tileOffset, self.tileSize, self.player1.color
-        )
-        Player.initInventory(
-            self.player1, self.inventoryStartX, self.inventoryStartY, self.tileOffset
-        )
-        Player.initPieces(
-            self.player2, self.tileOffset, self.tileSize, self.player2.color
-        )
-        Player.initInventory(
-            self.player2, self.inventoryStartX, self.inventoryStartY, self.tileOffset
-        )
-        Player.initPieces(
-            self.player3, self.tileOffset, self.tileSize, self.player3.color
-        )
-        Player.initInventory(
-            self.player3, self.inventoryStartX, self.inventoryStartY, self.tileOffset
-        )
-        Player.initPieces(
-            self.player4, self.tileOffset, self.tileSize, self.player4.color
-        )
-        Player.initInventory(
-            self.player4, self.inventoryStartX, self.inventoryStartY, self.tileOffset
-        )
-        self.setUpPieceDeck(self.player1, screen)
-        self.player1.placements[(0, 0)] = Player.Placement("lowerRight")
-        self.initialPlacement(self.player1, 0, 0, screen, "lowerRight")
-        self.setUpPieceDeck(self.player2, screen)
-        self.player2.placements[(0, 19)] = Player.Placement("lowerLeft")
-        self.initialPlacement(self.player2, 0, 19, screen, "lowerLeft")
-        self.setUpPieceDeck(self.player3, screen)
-        self.player3.placements[(19, 19)] = Player.Placement("upperLeft")
-        self.initialPlacement(self.player3, 19, 19, screen, "upperLeft")
-        self.setUpPieceDeck(self.player4, screen)
-        self.player4.placements[(19, 0)] = Player.Placement("upperRight")
-        self.initialPlacement(self.player4, 19, 0, screen, "upperRight")
-        Player.initInventory(
-            self.player1, self.inventoryStartX, self.inventoryStartY, self.tileOffset
-        )
+        self.initPlayers(screen)
         currentPlayer = self.player1
-        # canDrag = False
-        # dropped = False
-        # currPiece = None
         outCounter = 0
-        exitLoop = Process(target=self.quitLoop, daemon=True)
-        exitLoop.start()
 
-        while is_running:
-            # for event in pg.event.get():
-            #     if event.type == pg.MOUSEBUTTONDOWN:
-            #         canDrag, currPiece = Player.checkForDrag(currentPlayer, event.pos)
-            #     if event.type == pg.MOUSEBUTTONUP:
-            #         if canDrag:
-            #             dropped = self.dropPiece(currPiece)
-            #         canDrag = False
-            #     if event.type == pg.KEYDOWN and event.key == pg.K_p:
-            #         currentPlayer = self.getNextPlayer(currentPlayer)
-            #         Player.initInventory(
-            #             currentPlayer,
-            #             self.inventoryStartX,
-            #             self.inventoryStartY,
-            #             self.tileOffset,
-            #         )
-            #     if event.type == pg.KEYDOWN and event.key == pg.K_RETURN:
-            #         if (
-            #             dropped
-            #             and currPiece
-            #             and (
-            #                 self.checkValidity(currentPlayer, currPiece)
-            #                 if currentPlayer.played
-            #                 else self.checkValidityTurn1(currentPlayer, currPiece)
-            #             )
-            #         ):
-            #             currentPlayer.played = True
-            #             currentPlayer.pieces.append(currPiece)
-            #             self.commitToBoard(currentPlayer, currPiece, screen)
-            #             self.updatePlacements(currPiece)
-            #             currentPlayer.score += currPiece.numTiles
-            #             Player.removeAllPiece(currentPlayer, currPiece)
-            #             dropped = False
-            #             currPiece = None
-            #             currentPlayer = self.getNextPlayer(currentPlayer)
-            #             Player.initInventory(
-            #                 currentPlayer,
-            #                 self.inventoryStartX,
-            #                 self.inventoryStartY,
-            #                 self.tileOffset,
-            #             )
-            #         else:
-            #             Player.initInventory(
-            #                 currentPlayer,
-            #                 self.inventoryStartX,
-            #                 self.inventoryStartY,
-            #                 self.tileOffset,
-            #             )
-            #
-            #     if event.type == pg.KEYDOWN:
-            #         if event.key == pg.K_RIGHT or event.key == pg.K_f:
-            #             if currPiece:
-            #                 Piece.rotateCCW(currPiece)
-            #         if event.key == pg.K_LEFT or event.key == pg.K_a:
-            #             if currPiece:
-            #                 Piece.rotateCW(currPiece)
-            #         if event.key == pg.K_UP or event.key == pg.K_d:
-            #             if currPiece and not currPiece.symmetryX:
-            #                 Piece.flipOverX(currPiece)
-            #         if event.key == pg.K_DOWN or event.key == pg.K_s:
-            #             if currPiece and not currPiece.symmetryY:
-            #                 Piece.flipOverY(currPiece)
-            #         if event.key == pg.K_SPACE:
-            #             currentPlayer = self.getRandomMove(currentPlayer, screen)
+        while True:
+            for event in pg.event.get():
+                if event.type == pg.QUIT or (
+                    event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE
+                ):
+                    self.gameOver(startTime)
 
             if not currentPlayer.placements and not currentPlayer.out:
                 currentPlayer.out = True
                 outCounter += 1
 
             if outCounter == 4:
-                # time.sleep(10)
-                is_running = False
-                print("Game over")
-                print("Player 1:", self.player1.score)
-                print("Player 2:", self.player2.score)
-                print("Player 3:", self.player3.score)
-                print("Player 4:", self.player4.score)
-                maxScore = max(
-                    self.player1.score,
-                    self.player2.score,
-                    self.player3.score,
-                    self.player4.score,
-                )
-                if self.player1.score == maxScore:
-                    print("Player 1 wins", end="")
-                elif self.player2.score == maxScore:
-                    print("Player 2 wins", end="")
-                elif self.player3.score == maxScore:
-                    print("Player 3 wins", end="")
-                elif self.player4.score == maxScore:
-                    print("Player 4 wins", end="")
-                print(" With a score of:", maxScore)
-                print("--- %s seconds ---" % (time.time() - startTime))
+                self.gameOver(startTime)
 
-                pg.quit()
-                sys.exit()
             if currentPlayer.out:
                 currentPlayer = self.getNextPlayer(currentPlayer)
 
@@ -393,22 +230,35 @@ class Game:
 
             elif currentPlayer.playerType == "Greedy":
                 currentPlayer = self.getGreedyMove(currentPlayer, screen)
-                # time.sleep(0.9)
-            elif currentPlayer.playerType == "Human":
-                currentPlayer = self.getHumanMove(currentPlayer, screen, clock)
-            if not exitLoop.is_alive():
-                pg.quit()
-                sys.exit()
 
-            # mouse_rel = pg.mouse.get_rel()
-            # if canDrag:
-            #     Piece.drag(currPiece, mouse_rel)
-            screen.fill((255, 255, 255, 255))
-            screen.blit(self.board, (self.boardStartX, self.boardStartY))
-            if not currentPlayer.playerType == "AI":
-                Player.printPieces(currentPlayer, screen)
-            pg.display.flip()
-            clock.tick(144)
+            elif currentPlayer.playerType == "Human":
+                currentPlayer = self.getHumanMove(
+                    currentPlayer, screen, clock, startTime
+                )
+            self.updateScreen(screen, currentPlayer, clock)
+
+    def initPlayers(self, screen):
+        self.player1.color = (255, 0, 0)
+        self.player2.color = (0, 255, 0)
+        self.player3.color = (0, 0, 255)
+        self.player4.color = (255, 255, 0)
+        for player in [self.player1, self.player2, self.player3, self.player4]:
+            Player.initPieces(player, self.tileOffset, self.tileSize, player.color)
+            Player.initInventory(
+                player, self.inventoryStartX, self.inventoryStartY, self.tileOffset
+            )
+            self.setUpPieceDeck(player, screen)
+        self.player1.placements[(0, 0)] = Player.Placement("lowerRight")
+        self.initialPlacement(self.player1, 0, 0, screen, "lowerRight")
+        self.player2.placements[(0, 19)] = Player.Placement("lowerLeft")
+        self.initialPlacement(self.player2, 0, 19, screen, "lowerLeft")
+        self.player3.placements[(19, 19)] = Player.Placement("upperLeft")
+        self.initialPlacement(self.player3, 19, 19, screen, "upperLeft")
+        self.player4.placements[(19, 0)] = Player.Placement("upperRight")
+        self.initialPlacement(self.player4, 19, 0, screen, "upperRight")
+        Player.initInventory(
+            self.player1, self.inventoryStartX, self.inventoryStartY, self.tileOffset
+        )
 
     def draw_board(self):
         board = pg.Surface((self.boardSize, self.boardSize))
@@ -426,6 +276,32 @@ class Game:
                     ),
                 )
         return board
+
+    def gameOver(self, startTime):
+        print("Game over")
+        print("Player 1:", self.player1.score)
+        print("Player 2:", self.player2.score)
+        print("Player 3:", self.player3.score)
+        print("Player 4:", self.player4.score)
+        maxScore = max(
+            self.player1.score,
+            self.player2.score,
+            self.player3.score,
+            self.player4.score,
+        )
+        if self.player1.score == maxScore:
+            print("Player 1 wins", end="")
+        elif self.player2.score == maxScore:
+            print("Player 2 wins", end="")
+        elif self.player3.score == maxScore:
+            print("Player 3 wins", end="")
+        elif self.player4.score == maxScore:
+            print("Player 4 wins", end="")
+        print(" With a score of:", maxScore)
+        print("--- %s seconds ---" % (time.time() - startTime))
+
+        pg.quit()
+        sys.exit()
 
     def set_up_screen(self, height, width):
         self.screenHeight = width
@@ -692,16 +568,6 @@ class Game:
         screen,
         placementPos,
     ):
-        # if there is a 6x6 space, everything in the deck is valid
-        # everythingValid = False
-        # for row in range(rowTile, rowTile + 7):
-        #     for col in range(colTile, colTile + 7):
-        #         if self.boardArray[row][col] != self.tileColor:
-        #             everythingValid = False
-        #             break
-        # if everythingValid:
-        #     player.placements[(rowTile, colTile)] = copy.deepcopy(player.pieces)
-        #     return
         pieceDeck = player.deck[placementPos]
         for piece in pieceDeck:
             piece.x, piece.y = self.tilePos(rowTile, colTile)
@@ -715,15 +581,8 @@ class Game:
                 if player.played
                 else self.checkValidityTurn1(player, piece)
             ):
-                piece.access = self.getPieceAccess(player, piece, screen)
+                # piece.access = self.getPieceAccess(player, piece, screen)
                 player.placements[(rowTile, colTile)].append(Piece.insertCopy(piece))
-
-            # screen.fill((255, 255, 255))
-            # screen.blit(self.board, (self.boardStartX, self.boardStartY))
-            # # Player.printPieces(player, screen)
-            # screen.blit(piece.image, (piece.x, piece.y))
-            # pg.display.flip()
-            # time.sleep(0.05)
 
     def updatePlacements(self, piece):
         pieceRowStart = round(
@@ -809,8 +668,8 @@ class Game:
                 )
             ):
                 player.placements[place].remove(piece)
-            else:
-                piece.access = self.getPieceAccess(player, piece, player)
+            # else:
+            # piece.access = self.getPieceAccess(player, piece, player)
         # update the space of the placement
         player.placements[place].space = self.getPlacementSpace(
             player, place[0], place[1]
