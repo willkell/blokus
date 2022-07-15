@@ -57,6 +57,7 @@ class Game:
 
     def distToCenter(self, player, x):
         return math.sqrt(math.pow(x[0] - 10, 2) + math.pow(x[1] - 10, 2))
+
     def getRandomMove(self, currentPlayer, screen):
         currentPlayer.played = True
         placement = random.choice(list(currentPlayer.placements.keys()))
@@ -75,7 +76,6 @@ class Game:
             self.tileOffset,
         )
         return currentPlayer
-
 
     def getGreedyMove(self, player, screen):
         player.played = True
@@ -116,9 +116,7 @@ class Game:
         pg.display.flip()
         clock.tick(144)
 
-    def getHumanMove(
-        self, currentPlayer, screen, clock, startTime
-    ):
+    def getHumanMove(self, currentPlayer, screen, clock, startTime):
         canDrag = False
         dropped = False
         currPiece = None
@@ -157,7 +155,6 @@ class Game:
                         self.commitToBoard(currentPlayer, currPiece, screen)
                         self.updatePlacements(currPiece)
                         currentPlayer.score += currPiece.numTiles
-                        Player.removeAllPiece(currentPlayer, currPiece)
                         dropped = False
                         currPiece = None
                         currentPlayer = self.getNextPlayer(currentPlayer)
@@ -186,7 +183,9 @@ class Game:
                     if event.key == pg.K_DOWN or event.key == pg.K_s:
                         Piece.flipOverY(currPiece)
                     if event.key == pg.K_SPACE:
-                        cgetPlacementsBlockedurrentPlayer = self.getRandomMove(currentPlayer, screen)
+                        cgetPlacementsBlockedurrentPlayer = self.getRandomMove(
+                            currentPlayer, screen
+                        )
                         return currentPlayer
 
             mouse_rel = pg.mouse.get_rel()
@@ -414,15 +413,20 @@ class Game:
             for tile in row:
                 if self.tileWithinBoard(rowTile, colTile):
                     if (
+                        tile == "n"
+                        and self.boardArray[rowTile][colTile] == player.color
+                    ):
+                        return False
+                    elif (
+                        tile == "y"
+                        and self.boardArray[rowTile][colTile] == player.color
+                    ):
+                        isValid = True
+                    elif (
                         tile == "p"
                         and self.boardArray[rowTile][colTile] != self.tileColor
                     ):
                         return False
-                    if self.boardArray[rowTile][colTile] == player.color:
-                        if tile == "n":
-                            return False
-                        elif tile == "y":
-                            isValid = True
                 colTile += 1
             rowTile += 1
             colTile = colTileArrStart
@@ -575,39 +579,39 @@ class Game:
                 pieceColStart - 5 + (pieceRowStart - row),
                 pieceColEnd + 6 - (pieceRowStart - row),
             ):
-                if self.tileWithinBoard(row, col):
-                    players = self.whosePlacement(row, col)
-                    for player in players:
-                        self.updatePlacement(
-                            pieceRowStart - row - 2,
-                            abs(col - pieceColStart) - 2,
-                            player,
-                            (row, col),
-                        )
+                # if self.tileWithinBoard(row, col):
+                players = self.whosePlacement(row, col)
+                for player in players:
+                    self.updatePlacement(
+                        pieceRowStart - row - 2,
+                        abs(col - pieceColStart) - 2,
+                        player,
+                        (row, col),
+                    )
         # within the piece
         for row in range(pieceRowStart, pieceRowEnd + 1):
             for col in range(pieceColStart - 5, pieceColEnd + 6):
-                if self.tileWithinBoard(row, col):
-                    players = self.whosePlacement(row, col)
-                    for player in players:
-                        self.updatePlacement(
-                            1, abs(col - pieceColStart) - 2, player, (row, col)
-                        )
+                # if self.tileWithinBoard(row, col):
+                players = self.whosePlacement(row, col)
+                for player in players:
+                    self.updatePlacement(
+                        1, abs(col - pieceColStart) - 2, player, (row, col)
+                    )
         # after you are within the piece
         for row in range(pieceRowEnd + 1, pieceRowEnd + 6):
             for col in range(
                 pieceColStart - 5 + (row - pieceRowEnd),
                 pieceColEnd + 6 - (row - pieceRowEnd),
             ):
-                if self.tileWithinBoard(row, col):
-                    players = self.whosePlacement(row, col)
-                    for player in players:
-                        self.updatePlacement(
-                            row - pieceRowStart - 2,
-                            abs(col - pieceColStart) - 2,
-                            player,
-                            (row, col),
-                        )
+                # if self.tileWithinBoard(row, col):
+                players = self.whosePlacement(row, col)
+                for player in players:
+                    self.updatePlacement(
+                        row - pieceRowStart - 2,
+                        abs(col - pieceColStart) - 2,
+                        player,
+                        (row, col),
+                    )
 
         self.getRidOfEmptyPlacements()
 
@@ -677,25 +681,15 @@ class Game:
         )
 
     def getPlacementType(self, player, row, col):
-        if (
-            self.tileWithinBoard(row - 1, col - 1)
-            and self.boardArray[row - 1][col - 1] == player.color
-        ):
+        if row > 0 and col > 0 and self.boardArray[row - 1][col - 1] == player.color:
             return "lowerRight"
-        elif (
-            self.tileWithinBoard(row - 1, col + 1)
-            and self.boardArray[row - 1][col + 1] == player.color
-        ):
+        elif row > 0 and col < 19 and self.boardArray[row - 1][col + 1] == player.color:
             return "lowerLeft"
         elif (
-            self.tileWithinBoard(row + 1, col + 1)
-            and self.boardArray[row + 1][col + 1] == player.color
+            row < 19 and col < 19 and self.boardArray[row + 1][col + 1] == player.color
         ):
             return "upperLeft"
-        elif (
-            self.tileWithinBoard(row + 1, col - 1)
-            and self.boardArray[row + 1][col - 1] == player.color
-        ):
+        elif row < 19 and col > 0 and self.boardArray[row + 1][col - 1] == player.color:
             return "upperRight"
         else:
             print(row, col)
@@ -704,27 +698,14 @@ class Game:
             # return "none"
 
     def validForPlayer(self, player: Player, row: int, col: int) -> bool:
+        if not self.tileWithinBoard(row, col):
+            return False
         return not (
-            (
-                self.tileWithinBoard(row, col)
-                and self.boardArray[row][col] != self.tileColor
-            )
-            or (
-                self.tileWithinBoard(row, col + 1)
-                and self.boardArray[row - 1][col] == player.color
-            )
-            or (
-                self.tileWithinBoard(row + 1, col)
-                and self.boardArray[row - 1][col] == player.color
-            )
-            or (
-                self.tileWithinBoard(row, col - 1)
-                and self.boardArray[row - 1][col] == player.color
-            )
-            or (
-                self.tileWithinBoard(row - 1, col)
-                and self.boardArray[row - 1][col] == player.color
-            )
+            (self.boardArray[row][col] != self.tileColor)
+            or (col < 19 and self.boardArray[row - 1][col] == player.color)
+            or (row < 19 and self.boardArray[row - 1][col] == player.color)
+            or (col > 0 and self.boardArray[row - 1][col] == player.color)
+            or (row > 0 and self.boardArray[row - 1][col] == player.color)
         )
 
     def getPlacementSpace(self, player: Player, row: int, col: int) -> int:
@@ -753,7 +734,7 @@ class Game:
         ):
             space += 1
             checkRow += 1
-        # check to the right
+        # check to the left
         checkRow = row
         checkCol = col - 1
         while self.tileWithinBoard(checkRow, checkCol) and self.validForPlayer(
@@ -826,7 +807,6 @@ class Game:
                 colTile += 1
             rowTile += 1
             colTile = colTileArrStart
-        self.clearPieceArr(player, piece, screen)
 
     def getPlaceAccess(self, player, rowTile, colTile, placementPos) -> int:
         access = 0

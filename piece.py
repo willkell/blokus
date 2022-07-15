@@ -1,4 +1,5 @@
 import copy
+import numpy as np
 
 import pygame as pg
 
@@ -41,6 +42,7 @@ class Piece:
             for _ in range(sizeInTiles[1] + 2):
                 rowArray.append("x")
             self.array.append(rowArray)
+        self.array = np.array(self.array)
 
     def __deepcopy__(self, memo):
         cls = self.__class__
@@ -200,11 +202,11 @@ class Piece:
         width = tileOffset * 5 - (tileOffset - tileSize)
         height = tileOffset - (tileOffset - tileSize)
         piece = Piece(0, 0, color, width, height, [1, 5], 5, True, True, False, "Long5")
-        piece.array = [
+        piece.array = np.array([
             ["y", "n", "n", "n", "n", "n", "y"],
             ["n", "p", "p", "p", "p", "p", "n"],
             ["y", "n", "n", "n", "n", "n", "y"],
-        ]
+        ])
         pg.draw.rect(piece.image, (0, 0, 0), (0, 0, width, height), 1)
         pg.draw.line(piece.image, (0, 0, 0), (tileSize, 0), (tileSize, height))
         pg.draw.line(
@@ -233,11 +235,11 @@ class Piece:
         width = tileOffset * 4 - (tileOffset - tileSize)
         height = tileOffset - (tileOffset - tileSize)
         piece = Piece(0, 0, color, width, height, [1, 4], 4, True, True, False, "Long4")
-        piece.array = [
+        piece.array = np.array([
             ["y", "n", "n", "n", "n", "y"],
             ["n", "p", "p", "p", "p", "n"],
             ["y", "n", "n", "n", "n", "y"],
-        ]
+        ])
 
         pg.draw.rect(piece.image, (0, 0, 0), (0, 0, width, height), 1)
         pg.draw.line(piece.image, (0, 0, 0), (tileSize, 0), (tileSize, height))
@@ -261,11 +263,11 @@ class Piece:
         width = tileOffset * 3 - (tileOffset - tileSize)
         height = tileOffset - (tileOffset - tileSize)
         piece = Piece(0, 0, color, width, height, [1, 3], 3, True, True, False, "Long3")
-        piece.array = [
+        piece.array = np.array([
             ["y", "n", "n", "n", "y"],
             ["n", "p", "p", "p", "n"],
             ["y", "n", "n", "n", "y"],
-        ]
+        ])
         pg.draw.rect(piece.image, (0, 0, 0), (0, 0, width, height), 1)
         pg.draw.line(piece.image, (0, 0, 0), (tileSize, 0), (tileSize, height))
         pg.draw.line(
@@ -282,11 +284,11 @@ class Piece:
         width = tileOffset * 2 - (tileOffset - tileSize)
         height = tileOffset - (tileOffset - tileSize)
         piece = Piece(0, 0, color, width, height, [1, 2], 2, True, True, False, "Long2")
-        piece.array = [
+        piece.array = np.array([
             ["y", "n", "n", "y"],
             ["n", "p", "p", "n"],
             ["y", "n", "n", "y"],
-        ]
+        ])
         pg.draw.rect(piece.image, (0, 0, 0), (0, 0, width, height), 1)
         pg.draw.line(piece.image, (0, 0, 0), (tileSize, 0), (tileSize, height))
         return piece
@@ -297,11 +299,11 @@ class Piece:
         width = tileOffset - (tileOffset - tileSize)
         height = tileOffset - (tileOffset - tileSize)
         piece = Piece(0, 0, color, width, height, [1, 1], 1, True, True, True, "Dot")
-        piece.array = [
+        piece.array = np.array([
             ["y", "n", "y"],
             ["n", "p", "n"],
             ["y", "n", "y"],
-        ]
+        ])
         pg.draw.rect(piece.image, (0, 0, 0), (0, 0, width, height), 1)
         return piece
 
@@ -312,12 +314,12 @@ class Piece:
         width = tileOffset * 4 - (tileOffset - tileSize)
         height = tileOffset * 2 - (tileOffset - tileSize)
         piece = Piece(0, 0, color, width, height, [2, 4], 5, False, False, False, "L4")
-        piece.array = [
+        piece.array = np.array([
             [" ", " ", " ", "y", "n", "y"],
             ["y", "n", "n", "n", "p", "n"],
             ["n", "p", "p", "p", "p", "n"],
             ["y", "n", "n", "n", "n", "y"],
-        ]
+        ])
         # transparency
         piece.image.set_colorkey((0, 1, 0))
         pg.draw.rect(
@@ -352,12 +354,12 @@ class Piece:
         width = tileOffset * 3 - (tileOffset - tileSize)
         height = tileOffset * 2 - (tileOffset - tileSize)
         piece = Piece(0, 0, color, width, height, [2, 3], 4, False, False, False, "L3")
-        piece.array = [
+        piece.array = np.array([
             [" ", " ", "y", "n", "y"],
             ["y", "n", "n", "p", "n"],
             ["n", "p", "p", "p", "n"],
             ["y", "n", "n", "n", "y"],
-        ]
+        ])
         # transparency
         piece.image.set_colorkey((0, 1, 0))
         pg.draw.rect(piece.image, (0, 1, 0), (0, 0, tileSize + tileOffset, tileSize))
@@ -379,12 +381,12 @@ class Piece:
         width = tileOffset * 2 - (tileOffset - tileSize)
         height = tileOffset * 2 - (tileOffset - tileSize)
         piece = Piece(0, 0, color, width, height, [2, 2], 3, False, False, False, "L2")
-        piece.array = [
+        piece.array = np.array([
             [" ", "y", "n", "y"],
             ["y", "n", "p", "n"],
             ["n", "p", "p", "n"],
             ["y", "n", "n", "y"],
-        ]
+        ])
         # transparency
         piece.image.set_colorkey((0, 1, 0))
         pg.draw.rect(piece.image, (0, 1, 0), (0, 0, tileSize, tileSize))
@@ -403,13 +405,13 @@ class Piece:
         width = tileOffset * 3 - (tileOffset - tileSize)
         height = tileOffset * 3 - (tileOffset - tileSize)
         piece = Piece(0, 0, color, width, height, [3, 3], 5, False, False, False, "L33")
-        piece.array = [
+        piece.array = np.array([
             [" ", " ", "y", "n", "y"],
             [" ", " ", "n", "p", "n"],
             ["y", "n", "n", "p", "n"],
             ["n", "p", "p", "p", "n"],
             ["y", "n", "n", "n", "y"],
-        ]
+        ])
         # transparency
         piece.image.set_colorkey((0, 1, 0))
         pg.draw.rect(
@@ -444,13 +446,13 @@ class Piece:
         width = tileOffset * 3 - (tileOffset - tileSize)
         height = tileOffset * 3 - (tileOffset - tileSize)
         piece = Piece(0, 0, color, width, height, [3, 3], 5, True, True, True, "Plus")
-        piece.array = [
+        piece.array = np.array([
             [" ", "y", "n", "y", " "],
             ["y", "n", "p", "n", "y"],
             ["n", "p", "p", "p", "n"],
             ["y", "n", "p", "n", "y"],
             [" ", "y", "n", "y", " "],
-        ]
+        ])
         # transparency
         piece.image.set_colorkey((0, 1, 0))
         pg.draw.rect(piece.image, (0, 1, 0), (0, 0, tileOffset, tileOffset))
@@ -480,12 +482,12 @@ class Piece:
         width = tileOffset * 3 - (tileOffset - tileSize)
         height = tileOffset * 2 - (tileOffset - tileSize)
         piece = Piece(0, 0, color, width, height, [2, 3], 5, True, False, False, "Hat")
-        piece.array = [
+        piece.array = np.array([
             ["y", "n", "n", "n", "y"],
             ["n", "p", "p", "p", "n"],
             ["n", "p", "n", "p", "n"],
             ["y", "n", "y", "n", "y"],
-        ]
+        ])
         # transparency
         piece.image.set_colorkey((0, 1, 0))
         pg.draw.rect(
@@ -511,12 +513,12 @@ class Piece:
         width = tileOffset * 2 - (tileOffset - tileSize)
         height = tileOffset * 2 - (tileOffset - tileSize)
         piece = Piece(0, 0, color, width, height, [2, 2], 4, True, True, True, "Square")
-        piece.array = [
+        piece.array = np.array([
             ["y", "n", "n", "y"],
             ["n", "p", "p", "n"],
             ["n", "p", "p", "n"],
             ["y", "n", "n", "y"],
-        ]
+        ])
         # transparency
         # lines
         pg.draw.rect(
@@ -536,12 +538,12 @@ class Piece:
         width = tileOffset * 4 - (tileOffset - tileSize)
         height = tileOffset * 2 - (tileOffset - tileSize)
         piece = Piece(0, 0, color, width, height, [2, 4], 5, False, False, False, "F")
-        piece.array = [
+        piece.array = np.array([
             ["y", "n", "n", "n", "n", "y"],
             ["n", "p", "p", "p", "p", "n"],
             ["y", "n", "n", "p", "n", "y"],
             [" ", " ", "y", "n", "y", " "],
-        ]
+        ])
         # transparency
         piece.image.set_colorkey((0, 1, 0))
         pg.draw.rect(
@@ -568,13 +570,13 @@ class Piece:
         width = tileOffset * 3 - (tileOffset - tileSize)
         height = tileOffset * 3 - (tileOffset - tileSize)
         piece = Piece(0, 0, color, width, height, [3, 3], 5, False, False, False, "Z")
-        piece.array = [
+        piece.array = np.array([
             [" ", " ", "y", "n", "y"],
             ["y", "n", "n", "p", "n"],
             ["n", "p", "p", "p", "n"],
             ["n", "p", "n", "n", "y"],
             ["y", "n", "y", " ", " "],
-        ]
+        ])
         # transparency
         piece.image.set_colorkey((0, 1, 0))
         pg.draw.rect(piece.image, (0, 1, 0), (0, 0, tileSize + tileOffset, tileOffset))
@@ -606,13 +608,13 @@ class Piece:
         piece = Piece(
             0, 0, color, width, height, [3, 3], 5, False, False, False, "Stair"
         )
-        piece.array = [
+        piece.array = np.array([
             [" ", " ", "y", "n", "y"],
             [" ", "y", "n", "p", "n"],
             ["y", "n", "p", "p", "n"],
             ["n", "p", "p", "n", "y"],
             ["y", "n", "n", "y", " "],
-        ]
+        ])
         # transparency
         piece.image.set_colorkey((0, 1, 0))
         pg.draw.rect(piece.image, (0, 1, 0), (0, 0, tileSize + tileOffset, tileOffset))
@@ -657,13 +659,13 @@ class Piece:
         width = tileOffset * 3 - (tileOffset - tileSize)
         height = tileOffset * 3 - (tileOffset - tileSize)
         piece = Piece(0, 0, color, width, height, [3, 3], 5, False, True, False, "T")
-        piece.array = [
+        piece.array = np.array([
             ["y", "n", "y", " ", " "],
             ["n", "p", "n", "n", "y"],
             ["n", "p", "p", "p", "n"],
             ["n", "p", "n", "n", "y"],
             ["y", "n", "y", " ", " "],
-        ]
+        ])
         # transparency
         piece.image.set_colorkey((0, 1, 0))
         pg.draw.rect(
@@ -690,12 +692,12 @@ class Piece:
         width = tileOffset * 3 - (tileOffset - tileSize)
         height = tileOffset * 2 - (tileOffset - tileSize)
         piece = Piece(0, 0, color, width, height, [2, 3], 5, False, False, False, "P")
-        piece.array = [
+        piece.array = np.array([
             ["y", "n", "n", "y", " "],
             ["n", "p", "p", "n", "y"],
             ["n", "p", "p", "p", "n"],
             ["y", "n", "n", "n", "y"],
-        ]
+        ])
         # transparency
         piece.image.set_colorkey((0, 1, 0))
         pg.draw.rect(
@@ -721,12 +723,12 @@ class Piece:
         piece = Piece(
             0, 0, color, width, height, [2, 3], 4, False, False, False, "Squiggle"
         )
-        piece.array = [
+        piece.array = np.array([
             [" ", "y", "n", "n", "y"],
             ["y", "n", "p", "p", "n"],
             ["n", "p", "p", "n", "y"],
             ["y", "n", "n", "y", " "],
-        ]
+        ])
         # transparency
         piece.image.set_colorkey((0, 1, 0))
         pg.draw.rect(piece.image, (0, 1, 0), (0, 0, tileOffset, tileOffset))
@@ -766,13 +768,13 @@ class Piece:
         piece = Piece(
             0, 0, color, width, height, [3, 3], 5, False, False, False, "Weird"
         )
-        piece.array = [
+        piece.array = np.array([
             ["y", "n", "n", "y", " "],
             ["n", "p", "p", "n", "y"],
             ["y", "n", "p", "p", "n"],
             [" ", "n", "p", "n", "y"],
             [" ", "y", "n", "y", " "],
-        ]
+        ])
         # transparency
         piece.image.set_colorkey((0, 1, 0))
         pg.draw.rect(
@@ -804,12 +806,12 @@ class Piece:
         piece = Piece(
             0, 0, color, width, height, [2, 3], 4, True, False, False, "Weird2"
         )
-        piece.array = [
+        piece.array = np.array([
             [" ", "y", "n", "y", " "],
             ["y", "n", "p", "n", "y"],
             ["n", "p", "p", "p", "n"],
             ["y", "n", "n", "n", "y"],
-        ]
+        ])
         # transparency
         piece.image.set_colorkey((0, 1, 0))
         pg.draw.rect(piece.image, (0, 1, 0), (0, 0, tileOffset, tileOffset))
@@ -828,12 +830,12 @@ class Piece:
         piece = Piece(
             0, 0, color, width, height, [2, 4], 5, False, False, False, "Bolt"
         )
-        piece.array = [
+        piece.array = np.array([
             ["y", "n", "n", "n", "y", " "],
             ["n", "p", "p", "p", "n", "y"],
             ["y", "n", "n", "p", "p", "n"],
             [" ", " ", "y", "n", "n", "y"],
-        ]
+        ])
         # transparency
         piece.image.set_colorkey((0, 1, 0))
         pg.draw.rect(
